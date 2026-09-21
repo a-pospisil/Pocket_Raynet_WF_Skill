@@ -4,6 +4,8 @@
 **Rozsah:** technický a funkční audit MCP nástrojů skutečně dostupných v relaci
 **Režim:** READ-ONLY — do Raynetu ani Pocketu nebyl proveden žádný zápis
 
+**Revize 2** (21. 9. 2026): doplněna analýza složení klientské báze na stratifikovaném vzorku n = 136. Opraveno tvrzení „1050 firem" — jde z ~94 % o fyzické osoby. Přibylo: nespolehlivost flagu `person`, neunikátnost e-mailu i IČO, reálné využití tagů. Limit „nelze založit fyzickou osobu" povýšen z poznámky na tvrdé omezení automatizace.
+
 ## Prostředí (ověřeno)
 
 | Systém | Hodnota |
@@ -84,7 +86,24 @@ Pole: `actionItemId` (UUID), `actionType` (`create_reminder` | `draft_email` | `
 | `company_create` | **W** | **povinné:** `name`, `rating`, `state`, `role` | Nevytvoří person-type záznam; bez loga a příloh |
 | `company_update` | **W** | `id` + libovolná pole (partial) | Umí přílohu jen jako URL/odkaz na složku |
 
-**Ověřeno na datech:** klienti jsou `company` záznamy s `person: true` (`firstName`/`lastName` vyplněné). Celkem **1050** firem.
+**Ověřeno na datech:** klienti jsou záznamy entity `company`, ale **naprostá většina z nich jsou fyzické osoby**, ne firmy.
+
+Stratifikovaný vzorek n = 136 přes `company_get` (strata podle tagu `Broker Trust`, jehož velikost je přesně známá = 450):
+
+| | Odhad z 1050 | 95% CI |
+|---|---|---|
+| **Fyzické osoby** | **≈ 987 (94 %)** | 954–1020 (91–97 %) |
+| Skutečné právnické osoby | ≈ 63 (6 %) | 30–96 (3–9 %) |
+
+⚠️ **Flag `person` je nespolehlivý — nepoužívat pro rozlišení typu.** Ve vzorku bylo **13 z 23** záznamů s `person: false` ve skutečnosti fyzickou osobou s nenastaveným flagem (a `firstName`/`lastName` = `null`). Odhadem **~80 záznamů** v bázi je takto chybně označeno.
+
+Ověřeno doslovně na id 1071 (`Tomáš Josef`): `person: false`, `firstName: null`, a v `notice` stojí *„Import z Broker Trust (18. 9. 2026) … **Fyzická osoba – přepnout typ v Raynetu.**"*
+
+**Příčina:** záznamy zakládané z leadů, webových formulářů, sociálních sítí a Simpleshopu dostávají `person=false` defaultně. Ručně zakládané mají flag správně.
+
+**Praktické rozlišení typu:** `person` ani `legalForm` nefungují. Použitelný je regex na `name` z řádku `company_list` — vzor `/s\.r\.o\.|a\.s\.|spol\. s r\.o\.|o\.p\.s\.|z\.s\./i` zachytil ve vzorku 10/10 právnických osob a 0/126 falešně pozitivních u FO. Tituly a profese (`Mgr. … advokát`) heuristiku neruší. Není to server-side filtr — 21 volání `company_list(limit=50)` na celou bázi, tedy 50× levnější než 1050× `company_get`. Riziko false negative: firemní názvy bez sufixu (např. id 91 „Wismeo").
+
+⚠️ **`legalForm` je v datech mrtvé pole.** Číselník existuje a je naplněný (9 položek: 48 s.r.o., 49 a.s., 50 OSVČ, 51 družstvo, 52 k.s., 53 privátní nezisková organizace, 54 sdružení podnikatelů, 55 státní nezisková organizace, 56 v.o.s.), ale **vyplněný je u jediného záznamu v celé bázi** (`company_list(legalForm=48)` → `totalCount: 1`). Skutečné firmy (KIM Group s.r.o., Immoprospera s.r.o., MEZASTAV a.s. …) mají `legalForm: null`. Jako proxy pro typ entity nepoužitelné (recall ≈ 0 %).
 
 ### Aktivity
 
@@ -120,8 +139,18 @@ Pole: `actionItemId` (UUID), `actionType` (`create_reminder` | `draft_email` | `
 | Objednávky | `salesOrder_list/_get/_create/_update` | **0 záznamů** — nepoužívá |
 | Přílohy | jen jako `attachmentLink` (URL) nebo `attachmentFolderId` | **Binární upload nelze** |
 | Vlastní pole | `customFields` u všech entit | **Žádné definované — `{}` všude** |
-| Štítky | `tags` (zápis = string, čtení = pole) | **Prázdné u všech vzorků** |
+| Štítky | `tags` (zápis = string, čtení = pole/string) | **Aktivně se používají — 450 záznamů** |
 | Kategorie | `raynet://codelist/{entity}` | Viz níže |
+
+### Štítky (tags) — ověřeno, použitelné
+
+Na rozdíl od `customFields` se **tagy reálně používají**: `company_list(tags="Broker Trust")` → **`totalCount: 450`** (43 % celé báze — jeden import z 18. 9. 2026). Ukázka řádku: `"tags": "Import 18.9.2026 #1,Broker Trust"`.
+
+- **`totalCount` respektuje filtr** → libovolnou podmnožinu spočítáte **jedním requestem** bez stahování dat. Levné počítadlo.
+- Filtr `tags` je comma-separated s **OR** sémantikou (zásah = alespoň jeden tag).
+- ⚠️ **Nekonzistence typu:** `company_list` vrací `tags` jako **string** (`"a,b"`), `company_get` jako **pole** (`[]`). Počítat s obojím.
+- ⚠️ Zápis přes `*_update` **přepisuje celou hodnotu**, není aditivní → před změnou vždy načíst stávající.
+- Zda lze přes API založit **nový** název tagu (neexistující v číselníku) = **NEOVĚŘENO**.
 
 ### Číselníky a enumerace (ověřeno)
 
@@ -218,11 +247,35 @@ Potvrzeno i formátem desktopového id: `desktop_**1789996938017**_u1rl1v` → e
 
 ### Identifikace klienta — doporučené pořadí
 
-1. **`company_list(email=…)`** — nejsilnější signál, pokud e-mail z hovoru známe.
-2. **`company_list(regNumber=…)`** — exact match, pro OSVČ/firmy.
-3. **`company_list(name="Příjmení")`** — case-insensitive **substring**, spolehlivější než fulltext.
+> ⚠️ **Žádný jednotlivý klíč není unikátní.** Párovat vždy **kombinací e-mail + příjmení**, nikdy e-mailem samotným.
+
+1. **`company_list(email=…)` + kontrola příjmení** — nejlepší pokrytí, ale **ne unikátní**, viz níže.
+2. **`company_list(name="Příjmení")`** — case-insensitive **substring**, spolehlivější než fulltext.
+3. **`company_list(regNumber=…)`** — jen jako potvrzení, **ne jako primární klíč** (viz níže).
 4. **`company_list(fulltext=…)`** — pouze celá slova / prefixy, **ne libovolný substring**; zásah může přijít z nečekaného pole.
 5. Pokud 0 zásahů → zkusit **`lead_list`** (30 aktivních leadů; nový zájemce bývá nejdřív lead).
+
+#### E-mail: výborné pokrytí, ale NENÍ unikátní
+
+Pokrytí naměřené na vzorku 126 fyzických osob: **95 % má vyplněný `primaryAddress.email`** (odhad populace ~97 %). V importu Broker Trust dokonce 40/40 = 100 %.
+
+Ale kolize jsou reálné a systematické — **ověřeno přímým dotazem**:
+
+| e-mail | kolidující záznamy | typ kolize |
+|---|---|---|
+| `adam.pospisil@egfin.cz` | id 2 Evergreen finance, s.r.o. **+** id 102 Adam Pospíšil | majitel + jeho firma |
+| `michal.hanuliak11@gmail.com` | id 107 Michal Hanuliak **+** id 432 Immoprospera s.r.o. | majitel + jeho firma |
+| `michal.huml@proengineers.cz` | id 9 Ing. Michal Huml **+** id 100 Next Fortis Estate s.r.o. | majitel + jeho firma |
+| `joptop@email.cz` | id 212 **+** id 213 Josef Pokorný | duplicita téže osoby |
+| `simkrom@seznam.cz` | id 47 Jiří Šimek **+** id 52 **Jan** Šimek | **dva různí lidé** |
+
+Typický vzorec je **majitel + jeho s.r.o.** sdílející e-mail, případně manželé nebo rodina. Poslední řádek je nejnebezpečnější — stejný e-mail, dvě různé fyzické osoby.
+
+#### `regNumber` (IČO): nepoužitelný jako primární klíč
+
+- Vyplněný jen u **29 %** fyzických osob (vzorek 37/126). Velký rozdíl podle původu: Broker Trust import 7,5 %, zbytek báze 45 %.
+- **Není unikátní:** IČO `21697728` je na id 4 (Klára Pospíšilová) i id 221 (Pospíšilová Vladislava).
+- **Obsahuje nesmyslné hodnoty:** id 241 = `"0"`, id 148 = `"4"`, id 141 = `"6"`, id 163 = `"7"`.
 
 ⚠️ **Ověřený problém s přepisem jmen:** Pocket přepisuje totéž jméno různě — `Balint` / `Balent` / `Balent Peter`, `Hasová` / `Hasolová`, `Pejro` / `Pejřil` / `Pejza`. `fulltext="Hasová"` vrátil **0 zásahů**, přestože klientka v hovorech figuruje. **Název z Pocketu nelze použít jako vyhledávací klíč napřímo.**
 
@@ -255,7 +308,7 @@ Celkem 12 aktivit. Vazba `aktivita → OP` i `OP → klient` je **ověřeně fun
 | Kanál | Zápis | Čtení / filtr | Verdikt |
 |---|---|---|---|
 | `customFields` | ✅ API podporuje | ✅ v `*_get` | ⚠️ **V instanci nejsou definována žádná** (`{}` u company, phonecall, task, meeting, businessCase). Popisy nástrojů varují „reuse exact keys… rather than inventing names" → **vyžaduje založení pole v Raynet UI**. Nejčistší řešení, ale až po ruční přípravě. |
-| `tags` | ✅ string | ✅ `tags=` filtr (OR, comma-sep.) | ⚠️ Zápis **přepisuje celou hodnotu** (ne aditivní). Zda lze založit nový název tagu přes API = **NEOVĚŘENO**. |
+| `tags` | ✅ string | ✅ `tags=` filtr (OR, comma-sep.), `totalCount` zdarma | ✅ **Reálně se používají** (450 záznamů otagováno importem). Levné počítadlo jedním requestem. ⚠️ Zápis **přepisuje celou hodnotu** (ne aditivní) → nutné `*_get` před změnou. Zda lze založit **nový** název tagu přes API = **NEOVĚŘENO**. |
 | `description` / `solution` marker | ✅ HTML | ⚠️ `fulltext` = celá slova/prefixy | UUID s pomlčkami se pravděpodobně tokenizuje; dohledatelnost celého UUID = **NEOVĚŘENO**. Číselné tokeny fungují (test `fulltext="2856"` → 2 zásahy). |
 | **Kompozitní dotaz** `companyId` + `scheduledFrom` | — | ✅ `phonecall_list` | ✅ **Funguje dnes, bez úprav Raynetu** |
 
@@ -364,7 +417,7 @@ Požadovaný řetězec:
 6. ❌ **`businessCase.status` nelze nastavit přímo** — jen přes `businessCasePhase`.
 7. ❌ **`phonecall_update` neumí změnit `owner`.**
 8. ❌ **Žádný lookup nástroj pro `owner` ani `securityLevel`** — id se musí znát (Adam = 2, securityLevel 1 = Sdílená).
-9. ❌ **Nelze vytvořit person-type company** přes `company_create`.
+9. 🛑 **Nelze vytvořit fyzickou osobu** — `company_create` podle vlastního schématu *„always creates a non-person (organization) company; there is no support here for creating a person-type company record"*. Protože **~94 % klientů jsou FO**, znamená to, že **workflow nikdy nesmí zakládat nového klienta** — vytvořilo by záznam špatného typu. Větev „klient nenalezen" končí vždy **ručním založením v Raynet UI**, pak teprve pokračuje zápis hovoru. Není to okrajové omezení, ale tvrdá hranice automatizace.
 10. ❌ **Pocket složky nejsou k dispozici** (0 složek) → `folderIds` filtr je dnes bezcenný.
 11. ⚠️ **Limit 50 záznamů na stránku** u všech Raynet `*_list`.
 
@@ -388,8 +441,10 @@ Požadovaný řetězec:
 | # | Riziko | Dopad | Mitigace |
 |---|---|---|---|
 | 1 | **Špatné spárování klienta** kvůli přepisu jména (`Balint`/`Balent`, `Hasová`/`Hasolová`) | Hovor u cizího klienta | Párovat přes **e-mail/IČO**, ne jméno. Při <1 jistém zásahu **eskalovat na člověka** |
-| 2 | **Duplicitní klienti už v CRM** — ověřeno: `Zbyněk Svoboda` id **613** i **603**, shodný e-mail | Zápis k nesprávné kopii | Při >1 zásahu nikdy nehádat — předložit uživateli k výběru |
-| 3 | **Založení nového klienta místo nalezení stávajícího** | Další duplicita v 1050 záznamech | `company_create` **nikdy automaticky**; jen po potvrzení |
+| 2 | **Duplicitní klienti už v CRM** — ověřeno: `Zbyněk Svoboda` id **613** i **603**, shodný e-mail; `Josef Pokorný` id 212 + 213; id 1074 nese v názvu „DUPLICITA – SMAZAT" | Zápis k nesprávné kopii | Při >1 zásahu nikdy nehádat — předložit uživateli k výběru |
+| 2b | **Shodný e-mail u dvou různých lidí** — ověřeno: `simkrom@seznam.cz` = Jiří Šimek (47) **i** Jan Šimek (52); majitel + jeho s.r.o. sdílí e-mail ve 3 dalších případech | Hovor zapsaný cizí osobě nebo firmě místo člověka | Párovat **e-mail + příjmení**, nikdy e-mail samotný |
+| 3 | **Založení nového klienta** | `company_create` umí jen organizaci → vznikl by záznam **špatného typu** mezi 94 % FO | **Nikdy nezakládat automaticky.** Nový klient = ruční krok v Raynet UI |
+| 3b | **Spoléhání na flag `person`** při rozlišení FO/PO | ~80 záznamů je chybně `person: false`, ač jde o FO | Rozlišovat regexem na `name`, ne flagem |
 | 4 | **Markdown zapsaný do HTML pole** | `###` a `**` viditelné v CRM | Povinný převod MD→HTML + odstranění `<pocket:*>` tagů |
 | 5 | **Záměna `recordingDate`** ze `search_*` vs `get_*` | Aktivita posunutá o délku hovoru | `scheduledFrom` = `search_*`, `scheduledTill` = `get_*` |
 | 6 | **Duplicitní řádky v query mode** (8 řádků = 4 nahrávky) | Vícenásobné zpracování | Deduplikace podle `recordingId` před zpracováním |
@@ -448,7 +503,9 @@ pocket-raynet-wf/
 | V4 | Text do `description`/`solution` **jen HTML**, nikdy Markdown |
 | V5 | Řetězec `<pocket:` se **nesmí** objevit ve výstupu |
 | V6 | Klient jednoznačný (přesně 1 zásah), jinak **stop + dotaz** |
-| V7 | `company_create` / `businessCase_create` **nikdy bez potvrzení** |
+| V7 | `company_create` se pro klienta **nepoužívá vůbec** (uměl by jen organizaci); `businessCase_create` nikdy bez potvrzení |
+| V7b | Typ entity rozlišovat regexem na `name`, **nikdy flagem `person`** |
+| V7c | Klient je spárovaný jen při shodě **e-mail + příjmení**; samotný e-mail nestačí |
 | V8 | Číselníková id **jen** z `references/raynet-entities.md` nebo `raynet://codelist/*` |
 | V9 | Rodná čísla a čísla účtů se do CRM **nezapisují** |
 | V10 | Před každým `*_update` předchází `*_get` (kvůli přepisu participants/tags) |
@@ -457,8 +514,8 @@ pocket-raynet-wf/
 
 | Situace | Reakce |
 |---|---|
-| Klient nenalezen | **Stop**, nabídnout založení — nezakládat sám |
-| >1 kandidát | **Stop**, předložit seznam s id, e-mailem, ownerem |
+| Klient nenalezen | **Stop.** Založení přes MCP **není možné** (jen organizace) → vyzvat k ručnímu založení v Raynet UI, pak pokračovat |
+| >1 kandidát | **Stop**, předložit seznam s id, e-mailem, ownerem — kolize e-mailů jsou v bázi běžné |
 | Žádný otevřený OP | Založit telefonát **bez** vazby na OP (je volitelná) + upozornit |
 | Backend validation error | Nezkoušet znovu s hádaným id — vypsat chybu, ta jmenuje platná id |
 | Rate limit | `rate_limit_status` (zdarma) před dávkou; zbývá 23 635 |

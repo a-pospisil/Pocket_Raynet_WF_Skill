@@ -459,6 +459,13 @@ Požadovaný řetězec:
 
 ## K. RECOMMENDED SKILL ARCHITECTURE
 
+> ⚠️ **Tato sekce je původní návrh a je překonaná.** Platná, realizovaná verze je
+> v `pocket-to-raynet/SKILL.md`. Oproti návrhu níže se liší ve dvou bodech:
+> skill je **interaktivní bez orchestrátoru** (stav drží Raynet, ne `state/processed.json`)
+> a větev „klient nenalezen" končí **ručním založením v Raynet UI**, protože
+> `company_create` fyzickou osobu vytvořit neumí.
+> Sekce zůstává jako záznam výchozí úvahy.
+
 ```
 pocket-raynet-wf/
 ├── SKILL.md                     # vstupní bod, rozhodovací strom, kdy se spouští

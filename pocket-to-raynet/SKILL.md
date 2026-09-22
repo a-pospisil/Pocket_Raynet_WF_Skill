@@ -58,27 +58,23 @@ víckrát a jméno v titulku spolehlivě netrefí. Vždy deduplikuj podle `recor
 `recordingDate` ze `search_*` je **začátek** hovoru. Zapamatuj si ho, je to klíč
 pro krok 3 i pro `scheduledFrom`.
 
-### 3. Vyřaď už zpracované
+### 3. Rozhodni, co do CRM vůbec patří
 
-Jedním dotazem zjistíš, co v Raynetu za dané období už je:
+Ne každá nahrávka je klientský hovor. Do CRM nepatří:
 
-```
-phonecall_list(ownerId=2, scheduledFrom=<začátek okna>, scheduledTill=<konec okna>)
-```
+| Typ | Jak poznat |
+|---|---|
+| Diktované poznámky sobě | jeden mluvčí, „poznámky k…", příprava prezentace |
+| Interní porady s kolegy | protistrana je poradce z týmu, vývojář, asistentka |
+| Vývojové hovory | řeší se aplikace, issues, merge |
+| **Hovory s bankéřem přes víc případů** | jeden bankéř, přeskakuje mezi klienty, metodika |
+| **Nepřijatý hovor / zapomenuté nahrávání** | útržky, okolní ruch, žádná souvislá konverzace |
+| Testovací a prázdné | pár desítek znaků, `[background noise]` |
 
-Nahrávka je zpracovaná, pokud existuje telefonát, jehož `scheduledFrom` padne do
-**±2 minut** od začátku nahrávky. Časy z Pocketu jsou přesné na sekundy a nikdo je
-ručně nepřepisuje, takže je to spolehlivý otisk.
-
-Zpracované tiše přeskoč — neohlašuj je jednu po druhé.
-
-### 4. Rozhodni, co do CRM vůbec patří
-
-Ne každá nahrávka je klientský hovor. Typicky vyřaď:
-
-- interní porady s kolegy a diktované poznámky sobě
-- testovací nahrávky (krátké, bez obsahu, „zkouším jestli to nahrává")
-- hovory s bankéři o cizím klientovi, kde klient není protistranou
+Bankéřské hovory a nepřijaté hovory vypadají na první pohled jako klientské, ale
+zapsat se nedají — bankéřský proto, že se týká několika případů najednou a nejde
+přiřadit k jednomu klientovi, nepřijatý proto, že se nic neodehrálo. Poznáš je
+z obsahu, ne z názvu.
 
 Hraniční případy nezahazuj potichu — vypiš je jako přeskočené s důvodem, ať má
 uživatel možnost říct „tenhle zapiš".
@@ -87,7 +83,7 @@ Skill si nepamatuje, co jsi minule vědomě přeskočil. Proto se při opakovan�
 přes stejné okno vynoří znovu. Řešením je posouvat datové okno dopředu, ne to řešit
 v rámci skillu.
 
-### 5. Spáruj klienta
+### 4. Spáruj klienta
 
 Klienti jsou v Raynetu záznamy entity `company` — i fyzické osoby. Hledej v tomto
 pořadí a **vždy ověř kombinací e-mail + příjmení**:
@@ -117,6 +113,50 @@ ne fyzickou osobu — vznikl by záznam špatného typu, který se bude jinak ch
 každém dalším párování. Když klient v CRM není, řekni to a vyzvi uživatele, ať ho
 založí v Raynet UI; pak pokračuj.
 
+**Klient není vždy ten, s kým se mluví.** Hovor bývá veden s partnerem, rodičem nebo
+známým, ale financování se řeší pro někoho jiného — a záznam patří k tomu, kdo bude
+dlužníkem. Nahrávka „Martin G. — financování bytu pro Fenni G." patří k Fenni,
+ne k Martinovi. Když jsou v CRM oba, rozhodni podle toho, **čí je to případ**.
+
+### 5. Zkontroluj, co už u klienta je
+
+Teprve když znáš `companyId`, jde spolehlivě zjistit, jestli hovor není už zapsaný
+a jestli k němu neexistuje naplánovaná aktivita.
+
+Obojí zjistíš dvěma dotazy na **`activity_list`**, ne na `phonecall_list`:
+
+```
+activity_list(companyId=<id>, createdFrom=<den 00:00>, createdTill=<další den 00:00>)
+activity_list(companyId=<id>, entityType="phonecall", status="SCHEDULED")
+```
+
+Proč zrovna takhle — obojí je vykoupené chybou z ostrého provozu:
+
+- **`activity_list`, ne `phonecall_list`.** Hovor se v Raynetu běžně zapisuje i jako
+  **událost** (`Event`) nebo schůzka, ne jen jako telefonát. Dotaz na telefonáty
+  takový záznam nevidí a hovor by se zapsal podruhé.
+- **Filtr přes `createdFrom`, ne přes `scheduledFrom`.** Ručně zapsaný hovor má často
+  `scheduledFrom: null` a vyplněný jen `completed`. Časové okno na `scheduledFrom`
+  takový záznam **nikdy nevrátí**, ať je okno jakkoli široké.
+
+**Už zpracováno?** Ano, pokud mezi aktivitami klienta je taková, která:
+- má `completed` do ±15 minut od konce nahrávky, **nebo**
+- vznikla týž den a tematicky odpovídá obsahu hovoru, **nebo**
+- má v `description` stopu s `recordingId` této nahrávky.
+
+Zpracované tiše přeskoč — neohlašuj je jednu po druhé.
+
+**Existuje naplánovaný hovor k dokončení?** Naplánovaný telefonát, jehož
+`scheduledTill` už uplynul, je kandidát na přepsání tímto realizovaným — hovor
+se prostě uskutečnil později, než bylo v kalendáři.
+
+Posuď z přepisu, jestli se týká **téhož tématu** jako ten naplánovaný; téma ber
+z jeho `title` a `description` v Raynetu. Sedí-li, **dokonči existující místo
+zakládání nového** (krok 9). Zůstane tím vazba na OP a nevznikne duplicita ani
+naplánovaný hovor, který by visel otevřený napořád.
+
+Nesedí-li téma, založ nový a naplánovaný nech být — uživatel ho vyřídí zvlášť.
+
 ### 6. Najdi obchodní případ
 
 ```
@@ -124,8 +164,15 @@ businessCase_list(companyId=<id>, status="B_ACTIVE")
 ```
 
 Vazba na OP je volitelná, ale hodnotná — drží hovor v kontextu úvěrového procesu.
-Při jednom otevřeném OP ho navaž. Při více se zeptej. Při žádném založ telefonát
-bez vazby a zmiň to; zakládat OP sám nemáš.
+Při jednom otevřeném OP ho navaž. Při více vyber podle obsahu hovoru, a nejde-li to
+rozhodnout, zeptej se. Při žádném založ telefonát bez vazby a zmiň to; zakládat OP
+sám nemáš.
+
+⚠️ **Správný OP nemusí patřit klientovi z hovoru.** Případy se jmenují podle banky
+a produktu („Podnikatelský úvěr Moneta – nemovitost 2–3 mil. Kč") a hovor s jedním
+člověkem se může týkat případu vedeného na někom úplně jiném — na spolužadateli,
+manželce nebo tipaři. Když z obsahu plyne případ, který mezi OP spárovaného klienta
+není, **zeptej se** místo toho, abys sáhl po jeho vlastním OP jen proto, že je po ruce.
 
 ### 7. Připrav obsah
 
@@ -172,6 +219,31 @@ U dávky ukaž souhrn a pak polož jednu otázku na celek, ne na každý záznam
 Když uživatel zápis potvrdí pro dávku, neptej se znovu u každé položky.
 
 ### 9. Zapiš telefonát
+
+Podle výsledku kroku 5 jedna ze dvou větví.
+
+**Větev A — dokončení naplánovaného hovoru.** Našel se naplánovaný telefonát
+po termínu na stejné téma:
+
+```
+phonecall_update(
+  id            = <id naplánovaného telefonátu>,
+  status        = "COMPLETED",
+  scheduledFrom = <skutečný začátek>,
+  scheduledTill = <skutečný konec>,
+  solution      = <HTML shrnutí>,
+  description   = <doplň, nepřepisuj — viz níže>
+)
+```
+
+`description` naplánovaného hovoru bývá **přípravou na hovor** a má svou hodnotu
+(body k ověření, kontext případu). Načti si ho přes `phonecall_get`, ponech
+a nové informace připoj za něj. Přepsat ho znamená smazat, co si uživatel předem
+připravil.
+
+Vazbu na `company` ani `businessCase` neposílej — už tam je a je správná.
+
+**Větev B — nový telefonát.** Ve všech ostatních případech:
 
 ```
 phonecall_create(
@@ -233,6 +305,8 @@ Vypiš, co bylo založeno (s id), co přeskočeno a proč, a co zůstalo na uži
 |---|---|
 | Klient nenalezen | Zastav, vyzvi k ručnímu založení v Raynet UI |
 | Víc kandidátů na klienta | Zastav, předlož seznam |
+| Hovor se týká víc klientů najednou | Nezapisuj, přeskoč s důvodem — typicky hovor s bankéřem |
+| Případ z hovoru není mezi OP klienta | Zeptej se; nesahej po jiném OP jen proto, že je po ruce |
 | Backend vrátí chybu u id | Nezkoušej jiné id naslepo — chyba obvykle vyjmenuje platná |
 | `confirmToken` vypršel | Zopakuj náhled, získej nový token |
 | Nahrávka bez obsahu | Přeskoč, zmiň v souhrnu |

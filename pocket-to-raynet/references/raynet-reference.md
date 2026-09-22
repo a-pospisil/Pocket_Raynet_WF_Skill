@@ -65,9 +65,21 @@ Pro `businessCaseType` 64. Stav OP se odvozuje z fáze — `status` nelze nastav
 | 11 | Schváleno |
 | 8 | Podepsáno |
 
-Platná id celkem: 1–8, 10–14. Názvy 4, 5, 6, 12, 13, 14 neověřeny (nejsou v otevřené
-pipeline, pravděpodobně uzavřené stavy). Neplatné id vrátí chybu, která vyjmenuje
-platná — toho se dá využít místo hádání.
+Uzavřené fáze (dohledány na reálných OP):
+
+| id | Fáze | Odvozený `status` |
+|---|---|---|
+| 4 | Výhra | `E_WIN` |
+| 5 | Prohra | `F_LOST` |
+| 6 | Zrušeno | `G_STORNO` |
+
+Platná id celkem: 1–8, 10–14. Názvy 12, 13, 14 zůstávají neověřené. Neplatné id vrátí
+chybu, která vyjmenuje platná — toho se dá využít místo hádání.
+
+**Případy se jmenují podle banky a produktu**, ne podle klienta — „Moneta SBL",
+„Podnikatelský úvěr Moneta – nemovitost 2–3 mil. Kč". Stejný název se opakuje
+u různých klientů (11 OP s „Moneta" v názvu napříč různými firmami), takže název
+sám o sobě klienta neurčuje.
 
 ## Kategorie aktivit
 
@@ -172,6 +184,17 @@ podle primární vazby — záběr je širší, než by se čekalo, a je to spr�
 
 **`scheduledFrom` / `scheduledTill` v `*_list` jsou okno s překryvem**, ne vlastní
 hodnoty záznamu. Match = `záznam.scheduledFrom <= konec okna AND záznam.scheduledTill >= začátek okna`.
+
+⚠️ **Ručně zapsaná aktivita má často `scheduledFrom: null`** a vyplněné jen
+`completed`. Časové okno na `scheduledFrom` takový záznam **nikdy nevrátí**, ať je
+jakkoli široké. Ověřeno na PhoneCall 35927 (`scheduledFrom: null`,
+`completed: "2026-09-22 12:48"`). Na hledání „co vzniklo daný den" použij
+`createdFrom` / `createdTill`, ne `scheduledFrom`.
+
+⚠️ **Hovor nemusí být uložený jako `PhoneCall`.** V praxi se zapisuje i jako `Event`
+nebo `Meeting` (ověřeno na Event 36006 — telefonát s klientem uložený jako událost).
+Dotaz `phonecall_list` takový záznam nevrátí. Na kontrolu, jestli už je hovor
+zapsaný, používej **`activity_list`** napříč subtypy.
 
 **`tags` filtr je levné počítadlo** — `totalCount` respektuje filtr, takže velikost
 libovolné podmnožiny zjistíš jedním requestem bez stahování dat.

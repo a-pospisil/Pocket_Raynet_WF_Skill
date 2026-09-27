@@ -95,9 +95,16 @@ smysl a do CRM nepatří:
 
 Odstraní je `scripts/md_to_raynet_html.py`.
 
-**`audioUrl.signed_url` expiruje za 3600 s.** Do CRM se dá vložit jen jako
-`attachmentLink`, tedy jako odkaz, který za hodinu přestane fungovat. Trvalá archivace
-audia přes MCP možná není.
+**`audioUrl.signed_url` expiruje za 3600 s.** Jako odkaz v CRM se proto nehodí.
+
+**Trvalou kopii má Google Drive.** Pocket každou nahrávku sám exportuje na Drive
+účtu `adampospisilu@gmail.com`: složka se stejným názvem jako nahrávka, uvnitř
+`transcript.md`, `audio.ogg` a podsložky `Notes - <datum>`. Ověřeno 27. 9. 2026.
+Názvy složek nejsou unikátní („Evergreen app call" je víckrát), takže nahrávku
+k nim páruj podle názvu **a** času vytvoření. Odkaz na složku jde přidat do stopy
+ke zdroji v `description` — na rozdíl od `signed_url` nevyprší.
+
+Na Drive **nejsou** doklady klientů — jen tyhle exporty.
 
 ## Nekonzistence recordingDate
 
@@ -170,4 +177,5 @@ Každá položka nese `recordingId`, takže se spolehlivě naváže na zdrojový
   nenastaví → nahrávku nelze v Pocketu označit jako zpracovanou.
 - ❌ **Stránkovat action items** přes 50 položek.
 - ❌ **Složky** — účet jich má nula, takže `folderIds` filtr je bezpředmětný.
-- ❌ **Trvalý odkaz na audio** — podepsaná URL platí hodinu.
+- ⚠️ **Trvalý odkaz na audio přes Pocket MCP** — podepsaná URL platí hodinu;
+  trvalá kopie je na Google Drive (viz výše).

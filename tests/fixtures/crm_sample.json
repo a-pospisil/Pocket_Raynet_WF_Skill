@@ -1,0 +1,113 @@
+{
+ "_note": "Skutečná jména klientů z Raynetu (instance evergreen), jak je vrátil company_list během auditu a suchého běhu — jen id a jméno, bez kontaktů. Testy párování stojí právě na konkrétních chybách přepisu těchto jmen.",
+ "data": [
+  {
+   "id": 599,
+   "name": "Peter Balent"
+  },
+  {
+   "id": 41,
+   "name": "Ing. Jaroslav Semerák"
+  },
+  {
+   "id": 39,
+   "name": "Ing. Martin Gajdošech"
+  },
+  {
+   "id": 452,
+   "name": "Michal Gajdošech"
+  },
+  {
+   "id": 1082,
+   "name": "Fenni Gergelyová"
+  },
+  {
+   "id": 54,
+   "name": "Milan Čálek"
+  },
+  {
+   "id": 268,
+   "name": "Calek Invest s.r.o."
+  },
+  {
+   "id": 1083,
+   "name": "MDDr. Roman Macko"
+  },
+  {
+   "id": 1071,
+   "name": "Tomáš Josef"
+  },
+  {
+   "id": 342,
+   "name": "Jana Hassová"
+  },
+  {
+   "id": 578,
+   "name": "Pavel Sýkora"
+  },
+  {
+   "id": 124,
+   "name": "Jan Bretšnajdr"
+  },
+  {
+   "id": 379,
+   "name": "Jan Ruml"
+  },
+  {
+   "id": 912,
+   "name": "David Ruml"
+  },
+  {
+   "id": 913,
+   "name": "Jaroslav Ruml"
+  },
+  {
+   "id": 914,
+   "name": "Marcela Rumlová"
+  },
+  {
+   "id": 9,
+   "name": "Ing. Michal Huml"
+  },
+  {
+   "id": 325,
+   "name": "Michal Huml"
+  },
+  {
+   "id": 107,
+   "name": "Michal Hanuliak"
+  },
+  {
+   "id": 716,
+   "name": "Lenka Hanuliaková Toiflová"
+  },
+  {
+   "id": 540,
+   "name": "Mgr. Pavel Hendrich, LL.M., advokátní kancelář"
+  },
+  {
+   "id": 613,
+   "name": "Zbyněk Svoboda"
+  },
+  {
+   "id": 603,
+   "name": "Zbyněk Svoboda"
+  },
+  {
+   "id": 2,
+   "name": "Evergreen finance, s.r.o."
+  },
+  {
+   "id": 102,
+   "name": "Adam Pospíšil"
+  },
+  {
+   "id": 4,
+   "name": "Klára Pospíšilová"
+  },
+  {
+   "id": 221,
+   "name": "Pospíšilová Vladislava"
+  }
+ ]
+}

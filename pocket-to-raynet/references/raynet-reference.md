@@ -7,6 +7,8 @@ Plný audit: `docs/AUDIT-POCKET-RAYNET.md` v repozitáři.
 
 - [Konstanty](#konstanty)
 - [Stavy aktivit](#stavy-aktivit)
+- [Založení leadu](#založení-leadu)
+- [Soukromé aktivity](#soukromé-aktivity)
 - [Fáze obchodního případu](#fáze-obchodního-případu)
 - [Kategorie aktivit](#kategorie-aktivit)
 - [Povinná pole při zakládání](#povinná-pole-při-zakládání)
@@ -76,10 +78,94 @@ Uzavřené fáze (dohledány na reálných OP):
 Platná id celkem: 1–8, 10–14. Názvy 12, 13, 14 zůstávají neověřené. Neplatné id vrátí
 chybu, která vyjmenuje platná — toho se dá využít místo hádání.
 
+### Kategorie OP
+
+`raynet://codelist/businessCaseCategory`:
+
+| id | Kategorie |
+|---|---|
+| 116 | hypoteční úvěr |
+| 184 | Podnikatelský úvěr |
+| 189 | Spotřebitelský úvěr - neúčelový |
+| 169 | úvěr ze stavebního spoření |
+| 118 | investice |
+| 119 | životní pojištění |
+| 117 | pojištění vozidel |
+| 147 | pojištění majetku |
+| 148 | pojištění odpovědnosti |
+| 149 | penzijní spoření |
+| 150 | stavební spoření |
+
+### Založení OP
+
+```
+businessCase_create(
+  name             = "<typ úvěru> – <předmět>",   # „Hypotéka – koupě bytu Praha 3"
+  company          = <clientId>,                   # povinné, OP bez klienta nejde
+  businessCaseType = 64,                           # Úvěrový proces, jediný typ
+  category         = <116 | 184 | 189 | 169>,      # viz Kategorie OP
+  totalAmount      = <částka z hovoru, pokud zazněla>
+)
+```
+
+Fázi neposílej — nový OP dostane výchozí fázi pro daný typ, „Identifikace
+požadavku" (10); tak mají i všechny nové OP v datech. `status` se z fáze odvozuje
+a nastavit přímo nejde. Názvy v datech nejsou jednotné; formát `<typ> – <předmět>`
+odpovídá těm nejpopisnějším („Neúčelový úvěr – zástava byt Prokopova").
+
+### Automatika při založení OP
+
+Založení OP spustí v Raynetu automatiku (`createdBy: SYSTEM_USER`), která ve stejnou
+minutu vytvoří dva úkoly navázané na nový OP:
+
+- `Zaslat nabídku_ <název OP>` — priorita `CRITICAL`
+- `EPP 2 - připravit k žádosti <klient> <kód OP> <název OP>`
+
+Ověřeno na OP-26-0462 (Balent, 18. 9.) a OP-26-0480 (Macko, 22. 9.). Skill tyhle
+úkoly nezakládá — vznikly by dvakrát.
+
+### Názvy OP
+
 **Případy se jmenují podle banky a produktu**, ne podle klienta — „Moneta SBL",
 „Podnikatelský úvěr Moneta – nemovitost 2–3 mil. Kč". Stejný název se opakuje
 u různých klientů (11 OP s „Moneta" v názvu napříč různými firmami), takže název
 sám o sobě klienta neurčuje.
+
+## Založení leadu
+
+Lead je v Raynetu vstupní bod pro nového zájemce. Na rozdíl od `company_create`
+umí fyzickou osobu (`leadPerson: true`).
+
+```
+lead_create(
+  topic         = "<Jméno Příjmení> – <požadavek>",   # povinné; „Jan Novák – hypotéka na byt"
+  firstName, lastName,
+  leadPerson    = true,
+  email, tel1,                  # jen co v hovoru opravdu zaznělo, nic nedomýšlet
+  contactSource = <id>,         # viz níže
+  category      = 194,          # Adam Pospíšil
+  owner         = 2,
+  priority      = "DEFAULT"     # ELeadPriority: MINOR / DEFAULT / CRITICAL
+)
+```
+
+`contactSource` (`raynet://codelist/contactSource`): 82 vlastní kontakt ·
+81 Doporučení (netipař) · 156 doporučení tipaře · 79 web/poptávka ·
+179 sociální sítě · 196 workshop. Soukromý hovor s požadavkem je typicky 82.
+
+`leadCategory` jsou jména poradců/tipařů (194 Adam Pospíšil, 164 Martin Kořenek,
+195 Bez tipaře, …) — stejná logika jako `category` u klientů.
+
+Klient z leadu vznikne **převodem v Raynet UI**. `lead_convert` přes MCP jen napojí
+lead na už existující firmu/osobu/OP a nic nezakládá, takže pro nového zájemce nepomůže.
+Hovor mezitím zapiš k leadu: `phonecall_create(lead=<id>, …)`.
+
+## Soukromé aktivity
+
+Ustálená podoba v datech: `personal: true`, `category` 112 „soukromá aktivita",
+bez `company`, bez `description` i `solution`, krátký neutrální název („Lékař",
+„Louny"). `securityLevel` zůstává 1 „Sdílená" — záznam vidí celý tým, proto se do
+něj nepíše obsah.
 
 ## Kategorie aktivit
 
@@ -174,6 +260,15 @@ záznamu v celé bázi. Jako indikátor typu nepoužitelné.
   a obsahuje nesmysly jako `"0"`, `"4"`, `"6"`.
 
 Proto se páruje **e-mail + příjmení**, ne jedním klíčem.
+
+**`name` filtr rozlišuje diakritiku.** Je to substring bez ohledu na velikost písmen,
+ale `Calek` nenajde `Milan Čálek` (ověřeno — vrátil jen firmu `Calek Invest s.r.o.`,
+zapsanou bez diakritiky). Na hledání podle jména z přepisu proto použij
+`scripts/match_name.py variants`, který generuje i varianty s háčkem a bez něj.
+
+**Cizí jména bývají zapsaná foneticky.** Klient, kterého uživatel zná jako
+„Bretschneider", je v CRM `Jan Bretšnajdr` (id 124). Přímé hledání originálního
+pravopisu nenajde nic; prefix `Bret` ano.
 
 **`fulltext`** matchuje celá slova a prefixy, **ne libovolný substring**. Číselné
 tokeny funguje (test `"2856"` → 2 zásahy). Zásah může přijít z nečekaného pole.

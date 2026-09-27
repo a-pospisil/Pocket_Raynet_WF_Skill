@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+# Výstupy skriptů — koncepty e-mailů, balíček skillu
+*.eml
+*.skill
+# Audit log patří mimo repozitář (obsahuje jména klientů); kdyby se sem dostal:
+*.jsonl

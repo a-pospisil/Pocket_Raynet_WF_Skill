@@ -246,7 +246,8 @@ a řešitelem, kterou je potřeba hlídat zvlášť. Co dodá klient, je v zápi
 
 Když hovor jasně posunul případ (nabídka odeslána → „Nabídnuto“, žádost podána → „Podaná žádost + EPP 2.0“, schváleno, podepsáno),
 navrhni posun v náhledu. Po potvrzení `businessCase_update(businessCasePhase=<id>)`. Id fází: `references/raynet-reference.md`.
-Nic jiného na OP neměň.
+Nic jiného na OP neměň. Výjimka: k návrhu **Prohry** (fáze 5) patří i kategorie prohry (`losingCategory`) a jedna věta důvodu
+(`losingReason`); „jiná“ nikdy bez důvodu. Číselník: `references/raynet-reference.md`.
 
 ### 14. Shrň, co vzniklo
 

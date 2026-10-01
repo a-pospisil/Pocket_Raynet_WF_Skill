@@ -19,7 +19,7 @@ a pipeline. Úklid úkolů po termínu je jednorázový, potom je potřeba zavř
 |---|---|---|---|---|
 | 1 | **Povinná pole podle fáze OP.** Od „Nabídnuto“ zdroj, kategorie a odhad uzavření. Od „Podaná žádost“ banka (`producent`) a výše úvěru. | Nastavení » Nastavení evidence » Obchodní případ » Nastavení polí (A/4414383755281) | Banka dnes chybí u 78 % pipeline, odhad uzavření u 82 z 91 OP, takže forecast nefunguje. Vynucuje se i při přetažení na nástěnce. | 1–2 h |
 | 2 | **Povinný follow-up** u otevřených OP (fáze Identifikace až Schváleno). | Nastavení evidence » OP (A/31763398123165) | Každý otevřený případ má naplánovaný další krok. Nahradí „automatické“ upomínky, které dnes visí po termínu. | 15 min |
-| 3 | **Kategorie prohry používat.** Číselník už existuje (nezvedá, nedostatečná bonita, cena, konkurence, termín, zamítnuto bankou, nevyšel záměr / vada nemovitosti, jiná). Doplnit „klient obešel / jiný poradce“ a „test/duplicita“, „jiná“ jen s textem důvodu. | `losingCategory` (číselník), dialog při Prohře | 31 z 55 proher je „jiná“, z dat se nedá nic vyčíst. | 30 min |
+| 3 | **Kategorie prohry: přidat 5 nejčastějších důvodů** (rozbor všech 56 proher a 71 zrušených OP, 1. 10. 2026, níže). | Nastavení » číselník Kategorie prohry (`losingCategory`) | Dnes je 31 z 53 skutečných proher „jiná“ a i mimo ni je zařazení chybné. Po změně zůstane v „jiná“ 1 případ. | 30 min + přetřídění 1 h |
 | 4 | **Pravděpodobnost u každé fáze.** | Typy obchodu » Upravit nastavení (A/201738406) | Vážený objem v Prodejním trychtýři. MCP pravděpodobnost při změně fáze přepočítá sám. | 30 min |
 | 5 | **Vlastní pole OP jako číselníky:** banka, fixace, účel jako roletky; LTV a sazba jako procenta. Nepřejmenovávat pole, která plní web a appka podle názvu. | Nastavení » Vlastní pole (A/5276401814033) | Dnes např. `Doba_fixac` zná jen „3 roky“, `LTV` je číslo, `Soucasny_c` (čistý nájem) je text. | 2–3 h |
 | 6 | **Příznak „Fyzická osoba“** u ~94 % klientů (skript přes REST API `person=true` + jméno a příjmení) a **GDPR modul** (právní tituly, anonymizace, export). | REST API; Nastavení » GDPR (A/6370130507025, A/360020541691) | Správné řazení a hledání podle příjmení, GDPR záložka. MCP fyzickou osobu neumí, REST ano. | 0,5 dne |
@@ -27,6 +27,30 @@ a pipeline. Úklid úkolů po termínu je jednorázový, potom je potřeba zavř
 | 8 | **Sdílené filtry na nástěnce:** OP bez banky / zdroje / odhadu, OP bez další aktivity, úkoly po termínu, prohry bez kategorie, záznamy se štítkem „AI zápis“ za týden. | Seznamy » Uložit filtr, Nástěnka (A/5883883874705) | Týdenní kontrola kvality dat i AI zápisů za 5 minut. | 1 h |
 | 9 | **Kategorie aktivit zredukovat** na ~5. „Soukromá aktivita“ aktivitu před kolegy neskrývá (A/4404457810705). | Nastavení » Kategorie aktivit (A/206377235) | Dnes 8 kategorií, většinou nepoužité (ve vzorku `category: null`). | 30 min |
 | 10 | **API klíč „Hermes“** pro každého kolegu (Professional = max. 8 klíčů, při víc poradcích integrační licence). | Nastavení » API klíče (A/360032478072) | Webhook a historie změn ukážou `source=api` + název klíče, takže zápisy AI půjde auditovat. | 30 min |
+
+### Bod 3 v detailu: důvody prohry
+
+Rozbor k 2026-10-01: 56 proher (z toho 3 testy) a 71 zrušených OP. Důvody pod „jiná“ jsou odvozené z textu a aktivit `[odvozeno]`.
+
+**5 nových kategorií** (seřazeno podle počtu, kolik dnešních proher pokryjí; v závorce zrušené OP):
+
+| # | Nová kategorie | Proher | Jak zavést |
+|---|---|---|---|
+| 1 | **Klient přestal komunikovat** | 14 (+2) | **Přejmenovat 203 „nezvedá“** (zachová historii) a přeřadit 9 z „jiná“ a 3 z kategorie 200 |
+| 2 | **Klient si to rozmyslel / odložil** | 7 (+8) | nová položka |
+| 3 | **Klient řeší napřímo v bance / u developera** | 4–6 | nová položka; 125 přejmenovat na „Konkurence (jiný poradce)“ |
+| 4 | **Duplicita / test / chybně založeno** | 6 (+24) | nová položka; lépe ale takové OP rovnou zrušit nebo smazat, ať nekazí úspěšnost |
+| 5 | **Klient nedodal podklady** | 1 (+9) | nová položka |
+
+Dále:
+- 200 přejmenovat na „Záměr koupě nevyšel / nemovitost neprošla“ (dnes v ní sedí jen 1 případ ze 6),
+- 126 „termín“ zrušit (0 použití),
+- u „jiná“ vyžadovat text důvodu (dnes „.“, „?“, „neznámo“),
+- **zrušené OP mají důvod taky vyplňovat**: dnes ho nemá ani jeden ze 71.
+
+**Kde se prohrává** (53 proher): Identifikace 22 · Nabídnuto 13 · Podaná žádost 7 · Čeká na schválení 5 · Kompletace 3 · Schváleno 3.
+Klienti, kteří přestali komunikovat, mizí nejčastěji **po odeslání nabídky** (7 ze 14). Bod 2 (povinný další krok u OP) míří
+přesně sem. Ze zrušených OP navíc 6 skončilo tím, že follow-up neproběhl z naší strany.
 
 **Automatizace šetřit:** Professional má jen **50 průběhů za měsíc** a časový spouštěč spotřebuje průběh za každý nalezený
 záznam (A/13505394647837). Hodí se na pár věcí (prohra bez kategorie → notifikace). Větší logiku dát do Herma přes webhook,

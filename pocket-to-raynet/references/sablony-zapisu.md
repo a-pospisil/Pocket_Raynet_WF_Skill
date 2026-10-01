@@ -16,7 +16,7 @@ ukazují jen formát.
 - [Bankéř přes víc případů](#bankéř-přes-víc-případů)
 - [Souhrnný úkol a návrh e-mailu](#souhrnný-úkol-a-návrh-e-mailu)
 - [Příprava před schůzkou](#příprava-před-schůzkou)
-- [Karta klienta: vlastní pole](#karta-klienta-vlastní-pole)
+- [Karta klienta: maximum údajů](#karta-klienta-maximum-údajů)
 
 ## Zásady
 
@@ -219,10 +219,32 @@ Ranní běh: pro dnešní naplánované schůzky a telefonáty poradce **připoj
 
 Zdroj: karta OP (otevřené body, rozpětí bonity) a poslední aktivity. Když už blok s dnešním datem v popisu je, nepřidává se znovu.
 
-## Karta klienta: vlastní pole
+## Karta klienta: maximum údajů
 
-Co z hovoru jistě plyne, se zapíše i do vlastních polí klienta (`company_update`, `customFields`). Klíče z průzkumu instance
-k 2026-10-01 (definice nejsou přes MCP čitelné, viz `raynet-reference.md`):
+Adam, 1. 10. 2026: **na kartu klienta doplnit maximum údajů.** Karta klienta drží to, co platí napříč případy a přežije uzavření OP
+(kontakty, domácnost, příjmy, portfolio, úvěry a konce fixací pro servis). Karta OP drží konkrétní případ.
+
+Postup: `company_get` → porovnat s tím, co jistě plyne z hovoru → v náhledu ukázat **prázdné → nové** a **staré → nové** →
+po potvrzení jedno `company_update`. Prázdné pole se doplní. Existující hodnotu přepiš, jen když je nová jistá, a změnu ukaž
+v náhledu. Nejisté (zkomolené číslo, prohozený mluvčí) nezapisuj a dej do „Doptat“.
+
+### Standardní pole (`company_update`)
+
+| Pole | Co | Pozn. |
+|---|---|---|
+| `email`, `email2`, `phone` | kontakty | Jiný e-mail než stávající → `email2`, nikdy nepřepsat primární bez potvrzení. |
+| `street`, `city`, `zipCode`, `province`, `country` | adresa bydliště | Jen adresa, kterou klient uvedl jako svou, ne adresa nemovitosti. `country` jako ISO kód (CZ). |
+| `regNumber`, `taxNumber`, `taxPayer` | IČO a DIČ (OSVČ), plátce DPH (`YES`/`NO`) | U klienta s s.r.o. patří IČO firmy k firmě, ne k osobě. |
+| `contactSource` | odkud klient přišel | 156 doporučení tipaře · 82 vlastní kontakt · 81 doporučení (netipař) · 79 web/poptávka · 179 sociální sítě · 196 workshop |
+| `category` | **tipař** | Číselník jmen tipařů (176 Bez tipaře, 205 Monopoly Advisory, 180 Úspěšné reality…; `raynet://codelist/companyCategory`). **Určuje dělení provize** → měnit jen prázdné, a když se tipař v hovoru výslovně jmenuje; jinak se zeptej. |
+| `linkedin` a další sítě | jen když zazní | |
+| `notice` | **Profil klienta** (níže) | |
+
+Nemění se: `rating`, `state` (mění Raynet při výhře), `owner`, `name`, `companyClassification1` (VIP, tipař, bankéř… patří
+partnerům, ne klientům), **`bankAccount` nikdy**. MCP neumí jméno a příjmení zvlášť, titul, datum narození ani příznak fyzické
+osoby: věk nebo rok narození patří do profilu, ostatní skill uvede v souhrnu „doplnit v UI“.
+
+### Vlastní pole (`customFields`)
 
 | Klíč | Obsah | Typ |
 |---|---|---|
@@ -230,7 +252,32 @@ k 2026-10-01 (definice nejsou přes MCP čitelné, viz `raynet-reference.md`):
 | `zamestnava_ffa65` | zaměstnavatel | text |
 | `pracovni_p_f7e4d` | pracovní pozice | text |
 | `Najmy_v_DP_bb662` | nájmy v daňovém přiznání | ano/ne |
-| `Soucasny_c_952ff` | současný čistý nájem celkem | **text** (číslo jako řetězec) |
+| `Soucasny_c_952ff` | současný čistý nájem celkem za měsíc | **text** (číslo jako řetězec, např. `"27000"`) |
 
-`Rodne_cisl_ed0da` (rodné číslo) skill **nevyplňuje** (přepisy čísla komolí a skript RČ rediguje). Pole OP (banka, výše úvěru,
-účel, LTV…) skill nemění, navrhuje jen posun fáze.
+`Rodne_cisl_ed0da` skill nevyplňuje (tvrdé pravidlo 5), `Zadatel_v__a594e` a `Alternativ_b3c97` mají nejasný význam, nevyplňovat.
+Klíče jsou z průzkumu instance k 2026-10-01; nové pole se objeví až u vyplněného záznamu (`raynet-reference.md`, „Vlastní pole“).
+
+### Profil klienta (`notice`)
+
+HTML, přepisuje se celý jako karta OP. Ruční text zůstává pod nadpisem „Původní poznámky“ (např. „Fyzická osoba – přepnout typ
+v Raynetu“).
+
+```html
+<p><b>PROFIL KLIENTA K 1. 10. 2026</b> <i>(AI zápis, zdroj: aktivita 37512)</i></p>
+<p><b>Osoba:</b> 38 let (nar. 1988) · ženatý · 2 děti (4, 7) · Praha · občan ČR</p>
+<p><b>Vazby:</b> manželka = klientka id 1234 (spolužadatelka) · firma XY s.r.o. (IČO …, 100 %)</p>
+<p><b>Příjmy:</b> zaměstnanec, Firma a.s., analytik, HPP od 2019, čistá 90 000 · OSVČ IČO …, CZ-NACE 62, paušál 60 %, neplátce DPH</p>
+<p><b>Nemovitosti</b> <i>(nemovitost · podíl · nájem čistý · úvěr · konec fixace)</i></p>
+<ol>
+<li><b>2+1 Praha 9, OV</b> · 1/1 · 15 000 · ČSOB 3,1 mil. / 17 900 · fixace do 6/2028</li>
+<li><b>1+kk Brno, OV</b> · 1/1 · 12 000 · KB 2,4 mil. / 13 600 · fixace do 3/2031</li>
+</ol>
+<p><b>Ostatní závazky:</b> KK limit 50 000 (ČS) · leasing auto 6 500 do 2027</p>
+<p><b>Cíle:</b> portfolio 5 bytů do 2030, cash flow > 0 na byt · preferuje FO, s.r.o. zvažuje</p>
+<p><b>Servis:</b> konec fixace ČSOB 6/2028 → refinancování (ozvat se 3 měs. předem)</p>
+<p><b>Komunikace:</b> preferuje e-mail, hovory po 17:00</p>
+<p><b>Původní poznámky</b></p>
+<p>… ruční text beze změny …</p>
+```
+
+Prázdný řádek vynech. Údaje o případu (záměr, bonita, strategie konkrétního úvěru) sem nepatří, jsou v kartě OP.

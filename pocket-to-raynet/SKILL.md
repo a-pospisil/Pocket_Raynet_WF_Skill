@@ -168,7 +168,7 @@ Aktivita:   DOKONČIT schůzku 32195 „Konzultace a výpočet“ (naplánováno
             visí otevřené: telefonát „Doplnit výpisy“ (18. 9.) – beze změny
 Šablona:    L · štítek AI zápis
 Karta OP:   přepsat stav (nájmy 2 → 3, bonita 2,1–3,5 mil.); ruční text zachován
-Klient:     Pocet_deti 1 → 2, zamestnava „?“ → „…“
+Karta kl.:  e-mail2 + telefon (nové) · zdroj = workshop · Pocet_deti 1 → 2 · profil přepsán (3 nemovitosti, fixace ČSOB 6/2028)
 Úkol:       1 souhrnný úkol, 4 body, termín 6. 10., návrh e-mailu ano
 Fáze OP:    návrh Identifikace požadavku → Nabídnuto (zapíše se jen po potvrzení)
 Text:       <prvních 5 řádků zápisu>
@@ -215,11 +215,19 @@ Jen když se změnil stav případu (vždy u šablony L). `businessCase_get` →
 Ruční text, který v popisu napsal člověk, **zachovej** pod nadpisem „Původní poznámky“. „Klíčová rozhodnutí“ jen doplňuj.
 Pole OP (banka, výše, LTV…) neměň.
 
-### 11. Doplň kartu klienta
+### 11. Doplň kartu klienta (maximum údajů)
 
-Co z hovoru jistě plyne, zapiš i do vlastních polí klienta (`company_update(customFields=…)`): počet dětí, zaměstnavatel, pozice,
-nájmy v DP, čistý nájem. Klíče a typy: `references/raynet-reference.md`, „Vlastní pole“. Před zápisem `company_get` a přepisuj jen
-pole, kde je nová hodnota jistá. RČ nikdy.
+Na kartu klienta patří **maximum toho, co z hovoru jistě plyne** a platí napříč případy. Jedno `company_update` po potvrzení:
+
+- **standardní pole:** e-mail a telefon, adresa bydliště, IČO a DIČ (OSVČ), plátce DPH, zdroj kontaktu, tipař (`category`,
+  určuje dělení provize, proto jen prázdné a výslovně jmenovaný tipař, jinak se zeptej), sociální sítě;
+- **vlastní pole:** počet dětí, zaměstnavatel, pozice, nájmy v DP, čistý nájem;
+- **Profil klienta v `notice`:** osoba a domácnost, vazby (spolužadatel, firma), příjmy, nemovitosti, závazky, konce fixací,
+  cíle, servisní příležitosti, preferovaná komunikace. Ruční text zůstane pod „Původní poznámky“.
+
+Před zápisem `company_get`. Prázdné doplň, existující přepiš jen jistou hodnotou a změnu „staré → nové“ ukaž v náhledu.
+Nikdy RČ ani číslo účtu. Co MCP neumí (jméno a příjmení zvlášť, titul, datum narození, příznak fyzické osoby), uveď v souhrnu
+jako „doplnit v UI“. Pole, klíče a šablona profilu: `references/sablony-zapisu.md`, „Karta klienta“.
 
 ### 12. Souhrnný úkol
 

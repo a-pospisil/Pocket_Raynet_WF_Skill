@@ -2,7 +2,8 @@
 
 Claude skill, který zapisuje hovory a schůzky nahrané v **Hey Pocket** do **Raynet CRM**:
 stručný strukturovaný zápis (dokončí naplánovanou aktivitu, jinak založí realizovanou),
-kartu případu v popisu obchodního případu s nájmy a bonitou pro 8 bank, vlastní pole klienta,
+kartu případu v popisu obchodního případu s nájmy a bonitou pro 8 bank, maximum údajů na kartu klienta
+(kontakty, zdroj, tipař, vlastní pole, profil klienta s portfoliem a konci fixací),
 jeden souhrnný úkol s návrhem e-mailu a návrh posunu fáze. Ráno umí připravit dnešní schůzky.
 Běží v Claude Code i v orchestrátoru Hermes (každý poradce vlastní instance).
 

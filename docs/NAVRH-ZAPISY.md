@@ -52,7 +52,7 @@ Skill (`pocket-to-raynet/SKILL.md`) a audit jsem porovnal se zápisy, které v R
 | **Aktivita** (`solution`) | co se v hovoru **stalo nebo změnilo** | jen delta; žádné opakování karty |
 | **Karta OP** (`description`) | **aktuální stav případu**: záměr, žadatelé, příjmy, nájmy, závazky, bonita, strategie | přepisuje se celá, nahoře datum „stav k“; starý stav zůstává v aktivitách |
 | **Fáze OP** | posun fáze | jen návrh v náhledu, zápis po potvrzení; ostatní pole OP skill nemění (Adam 1. 10.) |
-| **Karta klienta** | vlastní pole klienta (děti, zaměstnavatel, pozice, nájmy v DP, čistý nájem) | co jistě plyne z hovoru |
+| **Karta klienta** | **maximum údajů** (Adam 1. 10.): kontakty, adresa, IČO/DIČ, DPH, zdroj, tipař, vlastní pole a Profil klienta v `notice` (domácnost, příjmy, portfolio, závazky, konce fixací, cíle) | co jistě plyne z hovoru; změny staré → nové v náhledu |
 | **Úkoly** | 1 souhrnný úkol na schůzku (checklist: kdo, co, do kdy) + samostatně jen věci s vlastním termínem a řešitelem | co dodá klient, jde do zápisu a e-mailu, ne do úkolů (Adam 1. 10.) |
 | **Vault** | metodika bank z hovorů, interní know-how | ne do Raynetu |
 
@@ -140,6 +140,8 @@ Kladu je postupně v chatu, odpovědi doplním sem.
 7d. ✅ **Follow-up e-mail: návrh v popisu souhrnného úkolu** v Raynetu, jako dnes (Adam, 1. 10.).
 7e. ✅ **Úvodní schůzka: plně v obou.** Aktivita = snímek k datu schůzky (historie), karta OP = aktuální stav (Adam, 1. 10.).
 7f. ✅ **Interní věci:** další postup a ladění s kolegou **patří do zápisu**. Zápis je interní a klient ho uvidí, jen když zazní „pošli klientovi XY“. Co jde, zapsat vždy i na **kartu klienta** (volitelná pole) (Adam, 1. 10.). Tím odpadá původní obava z bodu 3 kap. 1.
+7f2. ✅ **Karta klienta: doplnit maximum údajů** (Adam, 1. 10.): standardní pole, vlastní pole a „Profil klienta“ v poznámce.
+    Hranice: RČ a číslo účtu ne; tipař (dělení provize) jen prázdný a výslovně jmenovaný.
 7g. ✅ **Změny OP: jen návrh posunu fáze** (v náhledu, zápis po potvrzení). Pole OP, plánované uzavření ani nové OP skill nemění (Adam, 1. 10.).
 7h. ✅ **Spouštění:** teď testuje Adam, potom poběží přes **orchestrátor Hermes**, který budou mít všichni kolegové (Adam, 1. 10.). Skill proto nesmí mít napevno `owner = 2` ani spoléhat na nástroje jednoho klienta.
 7i. ✅ **Hermes = Hermes Agent (Nous Research)**, skill ve formátu SKILL.md + MCP. **Každý kolega má vlastní instanci** (Adam, 1. 10.).

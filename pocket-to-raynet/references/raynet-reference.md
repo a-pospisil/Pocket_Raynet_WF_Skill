@@ -9,6 +9,7 @@ Plný audit: `docs/AUDIT-POCKET-RAYNET.md` v repozitáři.
 - [Stavy aktivit](#stavy-aktivit)
 - [Fáze obchodního případu](#fáze-obchodního-případu)
 - [Kategorie aktivit](#kategorie-aktivit)
+- [Číselníky klienta a prohry](#číselníky-klienta-a-prohry)
 - [Povinná pole při zakládání](#povinná-pole-při-zakládání)
 - [Vlastní pole](#vlastní-pole)
 - [Vazby mezi entitami](#vazby-mezi-entitami)
@@ -100,6 +101,19 @@ sám o sobě klienta neurčuje.
 
 Nastavení `category` přepíše `color` server-side podle barvy kategorie, takže posílat
 `color` vedle `category` nemá smysl.
+
+## Číselníky klienta a prohry
+
+Stav k 2026-10-01 (`raynet://codelist/<entity>`; při chybě id vždy načíst znovu, číselníky se mění).
+
+| Číselník | Položky (id) |
+|---|---|
+| `contactSource` (zdroj kontaktu) | 156 doporučení tipaře · 82 vlastní kontakt · 81 Doporučení (netipař) · 79 web/poptávka · 179 sociální sítě · 196 workshop |
+| `companyCategory` (= **tipař**, určuje dělení provize) | 176 Bez tipaře · 193 Adam Pospíšil · 205 Monopoly Advisory · 180 Úspěšné reality · 113, 175, 197, 190, 153, 155, 157, 186, 208 = jednotliví tipaři (jména v číselníku) |
+| `companyClassification1` (role kontaktu, ne klienta) | 172 VIP · 171 Tipař · 177 Hypoteční specialista · 174 Key account manager · 178 Firemní bankéř · 173 Obchodní partner |
+| `companyClassification2`, `3` | prázdné |
+| `economyActivity` (obor) | jen 202 architekt, nepoužívat |
+| `losingCategory` (kategorie prohry) | 203 nezvedá · 191 Nedostatečná bonita · 124 cena · 125 konkurence · 126 termín · 198 Zamítnuto bankou · 200 klientovi nevyšel záměr koupě, vada nemovitosti · 127 jiná |
 
 ## Povinná pole při zakládání
 

@@ -27,8 +27,9 @@ Platí vždy, bez výjimky. Zdůvodnění: `docs/NAVRH-ZAPISY.md`, kap. 4a.
 
 1. **Nikdy nezapsat pod jiného klienta.** Klient je jistý jen při shodě dvou nezávislých znaků (e-mail nebo telefon + příjmení),
    nebo když ho uživatel jmenuje. Jinak se zeptej.
-2. **Naplánovanou aktivitu dokonči, nezakládej novou.** Když u klienta visí naplánovaný telefonát, schůzka nebo událost
-   a podle Pocketu proběhla jindy (později i dřív), označ jako hotovou tu původní (krok 5, větev A).
+2. **Naplánovanou aktivitu z téhož dne dokonči, nezakládej novou.** Když u klienta visí telefonát, schůzka nebo událost
+   naplánovaná **na stejný den**, kdy hovor proběhl, a podle Pocketu proběhla v jiný čas (později i dřív), označ jako hotovou
+   tu původní (krok 5, větev A). Aktivitu naplánovanou na jiný den ani nenaplánovanou nedokončuj (Adam, 1. 10. 2026).
 3. **Při nejistotě se zeptej** (klient, OP, aktivita k dokončení, rozdělení hovoru, posun fáze). Zápis přes MCP nejde smazat.
 4. **Nic nemaž a nic neruš.** Zrušení schůzky v Raynetu ji smaže i v Google kalendáři.
 5. **Rodná čísla a čísla účtů nikdy.** Ani v textu, ani ve vlastním poli `Rodne_cisl`.
@@ -103,8 +104,7 @@ Mluvčího navaž přes `participants`.
 
 ```
 activity_list(companyId=<id>, createdFrom=<den 00:00>, createdTill=<další den 00:00>)
-activity_list(companyId=<id>, status="SCHEDULED")
-activity_list(companyId=<id>, status="NEW")
+activity_list(companyId=<id>, status="SCHEDULED", scheduledFrom=<den hovoru 00:00>, scheduledTill=<den hovoru 23:59>)
 ```
 
 Vždy `activity_list` přes všechny typy, ne `phonecall_list`: hovor bývá uložený i jako schůzka nebo událost.
@@ -113,14 +113,19 @@ Filtruj přes `createdFrom`, ne přes `scheduledFrom`: ručně zapsaný hovor m�
 **Už zapsáno?** Ano, když aktivita klienta má štítek `AI zápis` nebo stopu s tímto `recordingId`, nebo `scheduledTill` do ±15 min
 od konce nahrávky, nebo vznikla týž den a obsahem odpovídá. Zapsané tiše přeskoč.
 
-**Naplánovaná aktivita k dokončení (tvrdé pravidlo 2).** Otevřený telefonát, schůzka nebo událost klienta (`SCHEDULED` nebo `NEW`),
-která tématem odpovídá hovoru, se **dokončí**, i když hovor proběhl v jiný den nebo čas. Téma ber z jejího `title` a `description`.
+**Naplánovaná aktivita k dokončení (tvrdé pravidlo 2).** Otevřený telefonát, schůzka nebo událost klienta naplánovaná
+**na stejný den** jako hovor, která tématem odpovídá, se **dokončí**, i když hovor proběhl v jiný čas. Téma ber z jejího `title`
+a `description`. Okno `scheduledFrom`/`scheduledTill` v `activity_list` funguje jako překryv, proto u každého kandidáta ověř,
+že jeho vlastní `scheduledFrom` je opravdu ve dni hovoru.
 
 | Situace | Co udělat |
 |---|---|
-| 1 otevřená aktivita, téma sedí | větev A: dokončit ji |
-| víc kandidátů nebo nejasné téma | **zeptej se**, kterou dokončit |
-| žádná | větev B: nová realizovaná aktivita |
+| 1 otevřená aktivita téhož dne, téma sedí | větev A: dokončit ji |
+| víc kandidátů téhož dne nebo nejasné téma | **zeptej se**, kterou dokončit |
+| žádná aktivita téhož dne | větev B: nová realizovaná aktivita |
+
+Otevřené aktivity z **jiných dní** a nenaplánované (`NEW`) nech beze změny. Uveď je jen v náhledu jako „visí otevřené:
+<typ, název, datum>“, ať je uživatel může vyřídit ručně.
 
 ### 6. Najdi obchodní případ
 
@@ -159,7 +164,8 @@ mBank, Oberbank, MONETA) podle metodiky:
 ```
 Klient:     Peter Balent (id 599, e-mail + příjmení ✓, vlastník Adam)
 OP:         OP-26-0462 – Neúčelový úvěr, zástava byt Prokopova (fáze: Identifikace požadavku)
-Aktivita:   DOKONČIT schůzku 32195 „Konzultace a výpočet“ (naplánováno 21. 9. 15:15, proběhlo 22. 9. 10:02–10:47)
+Aktivita:   DOKONČIT schůzku 32195 „Konzultace a výpočet“ (naplánováno 21. 9. 15:15, proběhlo 21. 9. 16:02–16:47)
+            visí otevřené: telefonát „Doplnit výpisy“ (18. 9.) – beze změny
 Šablona:    L · štítek AI zápis
 Karta OP:   přepsat stav (nájmy 2 → 3, bonita 2,1–3,5 mil.); ruční text zachován
 Klient:     Pocet_deti 1 → 2, zamestnava „?“ → „…“

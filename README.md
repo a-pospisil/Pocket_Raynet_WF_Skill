@@ -48,7 +48,7 @@ Tyhle hranice nejsou opatrnost, ale technická omezení MCP ověřená auditem:
 | **Nezaloží klienta** | `company_create` umí vytvořit jen organizaci, ne fyzickou osobu. Neznámý volající se založí jako **lead**, klienta zakládá člověk v UI. |
 | **Nezaloží e-mail ani dopis** | MCP to neumí. Návrh e-mailu klientovi je v popisu souhrnného úkolu. |
 | **Nezapíše pod nejistého klienta** | Klient musí sedět ve dvou znacích, jinak se ptá. |
-| **Nezaloží duplicitu k naplánované aktivitě** | Naplánovaný hovor nebo schůzku, které proběhly jindy, dokončí. |
+| **Nezaloží duplicitu k naplánované aktivitě** | Naplánovaný hovor nebo schůzku z téhož dne, které proběhly v jiný čas, dokončí. Aktivity z jiných dní nechá být. |
 | **Nezruší schůzku** | Zrušení v Raynetu ji smaže i v Google kalendáři. |
 | **Nezmění pole OP** | Navrhne jen posun fáze. |
 | **Nenahraje přílohu** | Jen odkaz URL. Pocket audio navíc expiruje po hodině. |

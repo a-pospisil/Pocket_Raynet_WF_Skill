@@ -110,8 +110,9 @@ DP 2025 §9: ř. 201 = 180 000 · ř. 202 = 196 000 (odpisy 90 000, úroky 98 00
 1. **Nikdy nezapsat pod jiného klienta.** Klient je jistý, jen když sedí dva nezávislé znaky: e-mail nebo telefon + příjmení, případně
    klient a OP výslovně jmenovaný v pokynu. Náhled vždy ukáže jméno, id a e-mail klienta a název a kód OP. U dávky nesmí položka
    s nejistým klientem projít hromadným potvrzením, ptá se zvlášť.
-2. **Naplánovaná aktivita, která proběhla později (nebo dřív), se dokončí, nový záznam nevzniká.** Hledá se mezi všemi otevřenými
-   aktivitami klienta (telefonát, schůzka, událost; `activity_list(companyId, status=SCHEDULED)` a `NEW`), ne jen mezi telefonáty.
+2. **Naplánovaná aktivita z téhož dne, která proběhla později (nebo dřív), se dokončí, nový záznam nevzniká.** Upřesnění Adama
+   1. 10.: **jen ve stejný den.** Aktivity naplánované na jiný den a nenaplánované zůstanou beze změny, jen se uvedou v náhledu.
+   Hledá se mezi telefonáty, schůzkami i událostmi klienta (`activity_list(companyId, status=SCHEDULED)` s oknem dne hovoru).
    Dokončení: `status=COMPLETED`, skutečný začátek a konec, zápis do `solution`, `description` (příprava) zůstane. Když je kandidátů víc
    nebo téma nesedí, skill se zeptá.
 3. **Při jakékoli nejistotě se skill zeptá** (klient, OP, aktivita k dokončení, posun fáze, rozdělení bankéřského hovoru).

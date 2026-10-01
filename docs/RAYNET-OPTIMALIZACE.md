@@ -19,7 +19,7 @@ a pipeline. Úklid úkolů po termínu je jednorázový, potom je potřeba zavř
 |---|---|---|---|---|
 | 1 | **Povinná pole podle fáze OP.** Od „Nabídnuto“ zdroj, kategorie a odhad uzavření. Od „Podaná žádost“ banka (`producent`) a výše úvěru. | Nastavení » Nastavení evidence » Obchodní případ » Nastavení polí (A/4414383755281) | Banka dnes chybí u 78 % pipeline, odhad uzavření u 82 z 91 OP, takže forecast nefunguje. Vynucuje se i při přetažení na nástěnce. | 1–2 h |
 | 2 | **Povinný follow-up** u otevřených OP (fáze Identifikace až Schváleno). | Nastavení evidence » OP (A/31763398123165) | Každý otevřený případ má naplánovaný další krok. Nahradí „automatické“ upomínky, které dnes visí po termínu. | 15 min |
-| 3 | **Kategorie prohry: přidat 5 nejčastějších důvodů** (rozbor všech 56 proher a 71 zrušených OP, 1. 10. 2026, níže). | Nastavení » číselník Kategorie prohry (`losingCategory`) | Dnes je 31 z 53 skutečných proher „jiná“ a i mimo ni je zařazení chybné. Po změně zůstane v „jiná“ 1 případ. | 30 min + přetřídění 1 h |
+| 3 | **Kategorie prohry: přidat 5 nejčastějších důvodů** (rozbor všech 56 proher a 71 zrušených OP, 1. 10. 2026, níže). | Jméno vpravo nahoře » Nastavení » Nastavení evidence » Číselníky » Obchod » Obchodní případy » Kategorie prohry (`losingCategory`; jen admin; A/201849383) | Dnes je 31 z 53 skutečných proher „jiná“ a i mimo ni je zařazení chybné. Po změně zůstane v „jiná“ 1 případ. | 30 min + přetřídění 1 h |
 | 4 | **Pravděpodobnost u každé fáze.** | Typy obchodu » Upravit nastavení (A/201738406) | Vážený objem v Prodejním trychtýři. MCP pravděpodobnost při změně fáze přepočítá sám. | 30 min |
 | 5 | **Vlastní pole OP jako číselníky:** banka, fixace, účel jako roletky; LTV a sazba jako procenta. Nepřejmenovávat pole, která plní web a appka podle názvu. | Nastavení » Vlastní pole (A/5276401814033) | Dnes např. `Doba_fixac` zná jen „3 roky“, `LTV` je číslo, `Soucasny_c` (čistý nájem) je text. | 2–3 h |
 | 6 | **Příznak „Fyzická osoba“** u ~94 % klientů (skript přes REST API `person=true` + jméno a příjmení) a **GDPR modul** (právní tituly, anonymizace, export). | REST API; Nastavení » GDPR (A/6370130507025, A/360020541691) | Správné řazení a hledání podle příjmení, GDPR záložka. MCP fyzickou osobu neumí, REST ano. | 0,5 dne |
@@ -84,8 +84,8 @@ stačí 1 pole „Provize (Kč)“ jako Konečná cena OP a reporty ziskovosti z
 1. **Úkoly po termínu (113 ze 144):** Raynet úkoly sám neuzavírá. Pravděpodobný zdroj je web egfin.cz, který ke každému leadu
    zakládá úkol na +1 den `[odhad]`. Staré úkoly hromadně uzavřít (seznam úkolů → filtr → Hromadná změna, max. 200 najednou,
    A/5926222392593). Pak upravit web: úkol zakládat jen u nezpracovaného leadu, nebo ho uzavřít při konverzi.
-2. **Testovací OP (~13) a testovací klienty** zneplatnit. Mezi nimi je i zkušební telefonát 37590 „TEST formátu zápisu – smazat“
-   u klienta „Jan Ukazkovy (TEST)“ (smazat v UI).
+2. **Testovací OP (~13) a testovací klienty** zneplatnit. Zkušební telefonát 37590 „TEST formátu zápisu“ u klienta
+   „Jan Ukazkovy (TEST)“ je zrušený (1. 10. 2026), testovacího klienta zneplatnit v UI.
 3. **Duplicity klientů** sloučit (⋯ » Sloučit, A/360000822106; potřeba právo mazat; z A do B se převedou jen pole, která jsou v B prázdná).
 4. **91 otevřených OP:** Hermes z historie aktivit navrhne banku, zdroj a odhad uzavření, poradce je potvrdí v seznamu.
 5. **31 proher „jiná“** překlasifikovat podle nového číselníku.
@@ -93,6 +93,6 @@ stačí 1 pole „Provize (Kč)“ jako Konečná cena OP a reporty ziskovosti z
 ## Co ověřit v instanci
 
 - jestli povinná pole platí i pro zápisy přes API a MCP,
-- kde je číselník kategorií prohry a jestli se na ni ptá dialog při Prohře,
+- jestli se dialog při Prohře ptá na kategorii prohry (číselník: viz bod 3; položky jde přejmenovat, zneplatnit, smazat, řadit),
 - odkud vznikají automatické úkoly (web, historie automatizací),
 - jestli MCP opravdu zapíše `scheduledEnd` a `losingCategory` (stačí test na testovacím OP).

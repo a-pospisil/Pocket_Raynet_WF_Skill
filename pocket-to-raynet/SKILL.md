@@ -31,7 +31,8 @@ Platí vždy, bez výjimky. Zdůvodnění: `docs/NAVRH-ZAPISY.md`, kap. 4a.
    naplánovaná **na stejný den**, kdy hovor proběhl, a podle Pocketu proběhla v jiný čas (později i dřív), označ jako hotovou
    tu původní (krok 5, větev A). Aktivitu naplánovanou na jiný den ani nenaplánovanou nedokončuj (Adam, 1. 10. 2026).
 3. **Při nejistotě se zeptej** (klient, OP, aktivita k dokončení, rozdělení hovoru, posun fáze). Zápis přes MCP nejde smazat.
-4. **Nic nemaž a nic neruš.** Zrušení schůzky v Raynetu ji smaže i v Google kalendáři.
+4. **Nic nemaž a nic neruš sám od sebe.** Duplicitní nebo testovací telefonát zruš (`status="CANCELLED"`) jen na výslovný
+   pokyn uživatele. Schůzky s pozvánkou nikdy: zrušení v Raynetu je smaže i v Google kalendáři.
 5. **Rodná čísla a čísla účtů jen z dokumentu, nikdy z hovoru.** Z přepisu ani ze shrnutí Pocketu je nepřebírej (čísla komolí).
    Do karty klienta (`Rodne_cisl`, `bankAccount`) je zapiš jen z dokumentu, který máš k dispozici (DP, výpis, smlouva, doklad),
    v náhledu s uvedením zdroje (Adam, 1. 10. 2026). V textu zápisu je nikdy neuváděj.
@@ -145,12 +146,24 @@ Když z obsahu plyne případ, který mezi OP klienta není, **zeptej se**.
 
 `get_pocket_conversation(recording_ids=[…])` vrátí `summary.markdown` a `recordingDate` = **konec** hovoru (→ `scheduledTill`).
 
-Text piš podle `references/sablony-zapisu.md` (S / M / L). Pocket Summary je surovina, ne výsledek: zkrať, uspořádej, ověř
-proti přepisu. Diarizace prohazuje mluvčí a **AI shrnutí přisuzuje Adamovy výroky klientovi** (1. 10. 2026: „klient odjíždí do Keni“,
-přitom do Keni jel Adam a klient na kongres). Kdo co dělá, kam jede, co slíbil: vždy podle přepisu, ne podle shrnutí. Když potřebuješ převést hotový Markdown, použij `scripts/md_to_raynet_html.py`
-(odstraní `<pocket:*>` bloky a rediguje RČ a čísla účtů).
+Text piš podle `references/sablony-zapisu.md` (S / M / L). Když potřebuješ převést hotový Markdown, použij
+`scripts/md_to_raynet_html.py` (odstraní `<pocket:*>` bloky a rediguje RČ a čísla účtů).
+
+**Shrnutí Pocketu je jen rejstřík témat, fakta ber z přepisu.** Diarizace prohazuje mluvčí a AI shrnutí přisuzuje výroky
+a plány špatné osobě. Případy z 22. 9.–1. 10. 2026: „klient odjíždí do Keni“ (do Keni jel Adam, klient na kongres),
+„dcera Petra Balenta“ (šlo o Kořenka), „Adam jede do lázní“ (jela klientka). Proto:
+
+1. Kdo co řekl, udělá, slíbil, kam jede, částky a data: vždy z přepisu (`get_pocket_conversation` s přepisem), ne ze shrnutí.
+2. Jména osob a firem ověř proti Raynetu a e-mailům. Osoba nebo firma, která je ve shrnutí, ale v přepisu nezazní, je chyba
+   shrnutí: do zápisu ji nepiš.
+3. V náhledu uveď řádek **„Chyby Pocketu“**: co shrnutí tvrdí jinak než přepis a jak to je správně.
+4. Mluvčí v Pocketu přes MCP přejmenovat nejde (nástroj chybí). Do souhrnu napiš „v Pocketu přejmenovat: Speaker 1 = …“,
+   ať to uživatel opraví v appce.
+5. Doporučení pro poradce: na začátku nahrávky nadiktovat jméno klienta a téma. Párování je pak jisté.
 
 Do textu patří i interní věci: další postup, rozdělení práce, ladění s kolegou. Zápis je interní, klient vidí jen návrh e-mailu.
+**Rady k fakturaci nepiš** (jak má fakturace vypadat, komu a kolika odběratelům fakturovat). Fakturaci uveď jen tak, jak ji
+klient sám popsal (Adam, 1. 10. 2026).
 
 **Bonita (u šablony L, a kdykoli se v hovoru mění příjmy, závazky nebo záměr).** Pro **všech 8 bank** (ČS, ČSOB, KB, RB, UCB,
 mBank, Oberbank, MONETA) podle metodiky:
@@ -162,6 +175,8 @@ mBank, Oberbank, MONETA) podle metodiky:
 - Sazby z `temata/sazby-a-slevy-bank.md` (nejvýš 1 měsíc staré, jinak označit), stres podle metodiky banky.
 - Chybějící vstup → **rozpětí min–max** s jednou větou, co je rozdílem. Nic nedomýšlet.
 - Výstup: plný rozpad u každé banky a „projde u X z 8“ (formát v šablonách). Je to orientační výpočet, ne schválení.
+- **Podnikatelské úvěry (MONETA SBL, úvěr pro s.r.o., Živnohypo) bonitu po 8 bankách nepočítají.** Místo ní parametry produktu
+  (obrat, LTV, DSCR, limit) a co banka započte: např. nájmy z DPFO, celý úvěr spoludlužníka (Adam, 1. 10. 2026).
 
 ### 8. Ukaž náhled a nech potvrdit
 
@@ -178,7 +193,11 @@ Fáze OP:    návrh Identifikace požadavku → Nabídnuto (zapíše se jen po p
 Text:       <prvních 5 řádků zápisu>
 ```
 
-U dávky souhrn a jedna otázka na celek, ale položka s nejistým klientem, OP nebo aktivitou se potvrzuje zvlášť.
+Do náhledu patří i řádky `Účastníci:` (vlastník klienta, když není zapisující) a `Chyby Pocketu:` (krok 7).
+
+U dávky souhrn a jedna otázka na celek, ale položka s nejistým klientem, OP nebo aktivitou se potvrzuje zvlášť. Dávku nad
+~5 hovorů dej jako stránku k revizi (HTML nebo artefakt), kde uživatel u každého hovoru zvolí Zapsat / Doptat / Nezapisovat
+a texty upraví přímo v náhledu. Zapisuj pak jen položky „Zapsat“ s upravenými texty.
 
 ### 9. Zapiš aktivitu
 
@@ -213,11 +232,16 @@ phonecall_update(id, completed=<konec>)          ← bez status; create nastaví
 
 Telefonát ani schůzka nemají pole `person`, kontaktní osobu navaž přes `participants`. Neposílej `completed` a `status` v jednom volání.
 
+**Vlastník klienta musí zápis vidět.** Když vlastník klienta (`company.owner`, poradce) není ten, kdo zapisuje, přidej ho
+do `participants` jako `{person: <owner id>}`. Jinak zápis ve svém přehledu neuvidí (Adam, 1. 10. 2026). U větve A pošli
+celý seznam: stávající účastníky s jejich `id` + vlastníka.
+
 ### 10. Aktualizuj kartu OP
 
 Jen když se změnil stav případu (vždy u šablony L). `businessCase_get` → sestav kartu podle šablony → `businessCase_update(description=…)`.
 Ruční text, který v popisu napsal člověk, **zachovej** pod nadpisem „Původní poznámky“. „Klíčová rozhodnutí“ jen doplňuj.
-Pole OP (banka, výše, LTV…) neměň.
+Pole OP (banka, výše, LTV…) neměň. Výši OP (`totalAmount`) jen na výslovný pokyn, např. „hodnota OP = 65 % z odhadu“
+(odhad bývá jen v PDF příloze e-mailu, kterou MCP nepřečte: zeptej se na částku).
 
 ### 11. Doplň kartu klienta (maximum údajů)
 
@@ -274,7 +298,8 @@ Hermes ráno, nebo pokyn „připrav dnešní schůzky":
 | Víc kandidátů na klienta, OP nebo aktivitu k dokončení | zastav, předlož seznam, nech vybrat |
 | Bankéřský hovor, část nejde přiřadit | zapiš jen jisté části, na zbytek se zeptej |
 | Případ z hovoru není mezi OP klienta | zeptej se, nesahej po jiném OP |
-| Pocket prohodil mluvčí | oprav podle obsahu, nejisté označ `[k ověření]` |
+| Pocket prohodil mluvčí | oprav podle obsahu, nejisté označ `[k ověření]`; přejmenování mluvčích nech na uživateli (MCP to neumí) |
+| Shrnutí Pocketu tvrdí něco jiného než přepis | platí přepis; rozdíl uveď v náhledu („Chyby Pocketu“) |
 | Backend vrátí chybu u id | nezkoušej jiné id naslepo, chyba vyjmenuje platná |
 | `confirmToken` vypršel | zopakuj náhled, získej nový token |
 | Raynet nedostupný | zastav celou dávku, nic nezapisuj napůl |

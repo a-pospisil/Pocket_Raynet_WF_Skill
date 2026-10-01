@@ -31,7 +31,10 @@ ukazují jen formát.
 - **Čísla po česku:** `3 500 000`, `4,79 %`, `3,5 mil.`; částky v Kč bez „Kč“, pokud je to z kontextu jasné.
 - **Neznámé = `?`** a položka v seznamu „Doptat“. Nic nedomýšlet. Nejisté z přepisu (prohozené role, zkomolené číslo) = `[k ověření]`.
 - **Rodná čísla a čísla účtů v textu nikdy.** Převodní skript je rediguje, při ručním psaní taky. Do polí karty klienta jen z dokumentu.
-- **Kdo co řekl a udělal, ověř v přepisu.** Shrnutí Pocketu přisuzuje Adamovy plány a sliby klientovi (cesta do Keni 1. 10. 2026).
+- **Kdo co řekl a udělal, ověř v přepisu.** Shrnutí Pocketu přisuzuje Adamovy plány a sliby klientovi (cesta do Keni 1. 10. 2026)
+  a plete jména (osoba ze shrnutí, která v přepisu nezazní, do zápisu nepatří).
+- **Žádné rady k fakturaci.** Jak má fakturace vypadat, komu fakturovat: nepsat. Jen to, co o své fakturaci řekl klient sám.
+- **Účastníci:** když klienta vlastní jiný poradce než ten, kdo zapisuje, přidej ho do `participants`, ať zápis vidí.
 - **Stopa na konci** každé aktivity: `<p><i>AI zápis · Pocket &lt;recordingId&gt;</i></p>`. K tomu štítek `AI zápis`.
 
 ## Výběr šablony
@@ -151,6 +154,13 @@ přesune pod nadpis „Původní poznámky“ a nikdy ho nemaže. Před zápisem
 Počítá se **vždy pro všech 8 bank**: ČS, ČSOB, KB, RB, UCB, mBank, Oberbank, MONETA. Pravidla bere z metodiky
 (`rychla-reference`, `kalkulacky-bank`, tematické stránky; viz `SKILL.md`, krok „Bonita“). Sazby z `sazby-a-slevy-bank`
 (nejvýš 1 měsíc staré, starší označit `[sazba k <datum>]`), stres podle metodiky banky.
+
+**Výjimka: podnikatelské úvěry** (MONETA SBL, úvěr pro s.r.o., Živnohypo). Bonita po 8 bankách se nepočítá. Místo ní jeden
+řádek s parametry produktu a s tím, co banka započte:
+
+```html
+<p><b>Parametry:</b> SBL Mini · obrat min. 500 000 (peněžní deník) · LTV 65 % · limit 20 mil. · banka započte celý úvěr spoludlužníka · nájmy z DPFO</p>
+```
 
 Hlavička s předpoklady, pak jedna odrážka na banku, seřazeno od nejvyššího max. úvěru:
 

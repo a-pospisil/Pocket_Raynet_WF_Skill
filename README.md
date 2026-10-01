@@ -50,10 +50,12 @@ Tyhle hranice nejsou opatrnost, ale technická omezení MCP ověřená auditem:
 | **Nezaloží e-mail ani dopis** | MCP to neumí. Návrh e-mailu klientovi je v popisu souhrnného úkolu. |
 | **Nezapíše pod nejistého klienta** | Klient musí sedět ve dvou znacích, jinak se ptá. |
 | **Nezaloží duplicitu k naplánované aktivitě** | Naplánovaný hovor nebo schůzku z téhož dne, které proběhly v jiný čas, dokončí. Aktivity z jiných dní nechá být. |
-| **Nezruší schůzku** | Zrušení v Raynetu ji smaže i v Google kalendáři. |
-| **Nezmění pole OP** | Navrhne jen posun fáze. |
+| **Nezruší schůzku** | Zrušení v Raynetu ji smaže i v Google kalendáři. Duplicitní nebo testovací telefonát zruší jen na výslovný pokyn. |
+| **Nezmění pole OP** | Navrhne jen posun fáze. Výši OP nastaví jen na výslovný pokyn. |
+| **Nepřejmenuje mluvčí v Pocketu** | MCP Pocketu to neumí. Skill napíše, koho přejmenovat, a opraví to v zápisu podle přepisu. |
 | **Nenahraje přílohu** | Jen odkaz URL. Pocket audio navíc expiruje po hodině. |
-| **Nezapíše rodné číslo ani číslo účtu** | Redakce probíhá automaticky v převodním skriptu. |
+| **Nezapíše rodné číslo ani číslo účtu z hovoru** | Redakce probíhá automaticky v převodním skriptu. Do karty klienta jen z dokumentu. |
+| **Neradí k fakturaci** | V zápisu je fakturace jen tak, jak ji popsal klient. |
 | **Nezapíše bez potvrzení** | Vždy nejdřív ukáže návrh. |
 
 ## Struktura

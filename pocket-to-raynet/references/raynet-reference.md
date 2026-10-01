@@ -229,7 +229,7 @@ záznamu v celé bázi. Jako indikátor typu nepoužitelné.
 **Identifikátory nejsou unikátní:**
 
 - `email` — pokrytí ~97 %, ale sdílí ho majitel se svojí s.r.o., manželé, a v jednom
-  ověřeném případě dva různí lidé (`simkrom@seznam.cz` = Jiří i Jan Šimek).
+  ověřeném případě dva různí lidé (stejné příjmení, jiné křestní jméno).
 - `regNumber` — jen u 29 % fyzických osob, duplicitní (`21697728` na dvou záznamech)
   a obsahuje nesmysly jako `"0"`, `"4"`, `"6"`.
 

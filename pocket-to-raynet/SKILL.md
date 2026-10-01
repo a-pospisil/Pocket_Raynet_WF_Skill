@@ -137,7 +137,9 @@ businessCase_list(companyId=<id>, status="B_ACTIVE")
 ```
 
 1 otevřený OP: naváž. Víc OP: vyber podle obsahu, a když to nejde jistě, zeptej se. Žádný: zápis bez OP a zmiň to.
-OP sám nezakládej.
+OP sám nezakládej. **Výjimka: běžící žádost u banky bez OP** (bankéř chce podklady, žádost je podaná). Tehdy v náhledu navrhni
+nový OP: název „banka/produkt – popis“, kategorie, fáze, banka v `producent`, výše (`totalAmount` + `vyse_uveru`; když ji neznáš,
+zeptej se). Založ ho až po potvrzení a zápis k němu naváž (Adam, 1. 10. 2026: „chybí zapsaný OP“).
 
 ⚠️ OP se jmenují podle banky a produktu, ne podle klienta, a případ z hovoru může být vedený na spolužadateli nebo manželce.
 Když z obsahu plyne případ, který mezi OP klienta není, **zeptej se**.
@@ -261,6 +263,9 @@ jako „doplnit v UI“. Pole, klíče a šablona profilu: `references/sablony-z
 
 Drobnosti z hovoru jdou do **jednoho úkolu** (checklist: kdo · co · do kdy). Samostatný úkol jen pro věc s vlastním termínem
 a řešitelem, kterou je potřeba hlídat zvlášť. Co dodá klient, je v zápisu a v návrhu e-mailu, ne v úkolech.
+
+Úkol navrhuj jen u **aktivního případu s kroky poradce s termínem**. Jinak stačí „Další kroky“ v zápisu. Při revizi 1. 10. 2026
+Adam ponechal navržený úkol jen u 1 ze 7 hovorů.
 
 - `task_create(title, deadline, owner=<krok 0>, company=<id>, businessCase=<id>, description=<checklist + návrh e-mailu>, tags="AI zápis")`.
 - Řešitel jiný než zapisující: po založení `task_get` a přepsat osobu u druhého účastníka v `participants`

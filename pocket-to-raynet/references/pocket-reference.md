@@ -69,9 +69,9 @@ Navíc pole: `metadata { matchType, source }`, `sectionStartMs`, `sectionEndMs`,
 
 1. **Vrací duplicitní řádky téže nahrávky.** Měřeno: 8 řádků = 4 unikátní
    `recordingId`, jedna nahrávka se opakovala 4× se shodným skóre. Vždy deduplikuj.
-2. **Na hledání podle jména klienta se nedá spolehnout.** Dotaz „Peter Balent
+2. **Na hledání podle jména klienta se nedá spolehnout.** Dotaz „<jméno klienta>
    financování pozemku na Slovensku" nenašel nahrávku s názvem
-   „Konzultace a výpočet [Peter Balent]". Všechny zásahy se vrátily jako
+   „Konzultace a výpočet [<jméno klienta>]". Všechny zásahy se vrátily jako
    `matchType: "bm25"`, tedy keyword, ne vektorově.
 
 Query režim používej na dohledání nahrávky podle **tématu**, ne podle osoby.

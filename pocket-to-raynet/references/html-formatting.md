@@ -22,7 +22,7 @@ se v CRM zobrazí doslova i s těmi znaky.
 
 ## Co Raynet renderuje
 
-Doloženo z existujících záznamů:
+Doloženo z existujících záznamů a zkušebního zápisu 1. 10. 2026:
 
 | Prvek | Značka |
 |---|---|
@@ -44,7 +44,10 @@ HTML nesanitizuje agresivně. Spoléhat se na to ale nemá smysl — vystač si 
   `<p><b>Text</b></p>` — tak to vypadá i ve výstupech, které do CRM píše člověk.
 - **`<hr>`** a vodorovné oddělovače — v datech nejsou a v úzkém sloupci aktivity
   působí rušivě.
-- **Tabulky** (`<table>`) — nevyzkoušené a v detailu aktivity se stejně nevejdou.
+- **Tabulky** (`<table>`) — Raynet je při uložení **odstraní** (s atributy i bez) a obsah buněk slepí do jednoho řádku.
+  Ověřeno 1. 10. 2026 na telefonátu 37590. Tabulková data piš jako seznam s legendou, viz `sablony-zapisu.md`.
+- **`<pre>`** — taky se odstraní, řádky se slijí. `<p style="font-family: monospace">` se uloží, ale v mobilu
+  a v úzkém sloupci se láme; Adam zvolil seznam.
 - **Markdown v jakékoli podobě.**
 
 ## Vnořené seznamy

@@ -54,7 +54,7 @@ Navíc pole: `metadata{matchType, source}`, `sectionStartMs`, `sectionEndMs`, `s
 
 ⚠️ **Dvě zásadní zjištění:**
 1. **Vrací duplicitní řádky téže nahrávky.** Test: 8 řádků = **4 unikátní** `recordingId` (jedno ID 4×, se shodným skóre i sekcí). Nutná deduplikace podle `recordingId`.
-2. **Sémantické hledání není spolehlivé pro hledání podle jména klienta.** Dotaz „Peter Balent financování pozemku na Slovensku" **nenašel** nahrávku s názvem `Konzultace a výpočet [Peter Balent]`. Všechny zásahy se vrátily s `matchType: "bm25"` (keyword), nikoli vektorově.
+2. **Sémantické hledání není spolehlivé pro hledání podle jména klienta.** Dotaz „<jméno klienta> financování pozemku na Slovensku" **nenašel** nahrávku s názvem `Konzultace a výpočet [<jméno klienta>]`. Všechny zásahy se vrátily s `matchType: "bm25"` (keyword), nikoli vektorově.
 
 ### Struktura `summary.markdown`
 
@@ -264,10 +264,10 @@ Ale kolize jsou reálné a systematické — **ověřeno přímým dotazem**:
 | e-mail | kolidující záznamy | typ kolize |
 |---|---|---|
 | `adam.pospisil@egfin.cz` | id 2 Evergreen finance, s.r.o. **+** id 102 Adam Pospíšil | majitel + jeho firma |
-| `michal.hanuliak11@gmail.com` | id 107 Michal Hanuliak **+** id 432 Immoprospera s.r.o. | majitel + jeho firma |
-| `michal.huml@proengineers.cz` | id 9 Ing. Michal Huml **+** id 100 Next Fortis Estate s.r.o. | majitel + jeho firma |
-| `joptop@email.cz` | id 212 **+** id 213 Josef Pokorný | duplicita téže osoby |
-| `simkrom@seznam.cz` | id 47 Jiří Šimek **+** id 52 **Jan** Šimek | **dva různí lidé** |
+| e-mail klienta A | id 107 (FO) **+** id 432 (jeho s.r.o.) | majitel + jeho firma |
+| e-mail klienta B | id 9 (FO) **+** id 100 (jeho s.r.o.) | majitel + jeho firma |
+| e-mail klienta C | id 212 **+** id 213 | duplicita téže osoby |
+| e-mail klienta D | id 47 **+** id 52 (stejné příjmení, jiné jméno) | **dva různí lidé** |
 
 Typický vzorec je **majitel + jeho s.r.o.** sdílející e-mail, případně manželé nebo rodina. Poslední řádek je nejnebezpečnější — stejný e-mail, dvě různé fyzické osoby.
 
@@ -277,7 +277,7 @@ Typický vzorec je **majitel + jeho s.r.o.** sdílející e-mail, případně ma
 - **Není unikátní:** IČO `21697728` je na id 4 (Klára Pospíšilová) i id 221 (Pospíšilová Vladislava).
 - **Obsahuje nesmyslné hodnoty:** id 241 = `"0"`, id 148 = `"4"`, id 141 = `"6"`, id 163 = `"7"`.
 
-⚠️ **Ověřený problém s přepisem jmen:** Pocket přepisuje totéž jméno různě — `Balint` / `Balent` / `Balent Peter`, `Hasová` / `Hasolová`, `Pejro` / `Pejřil` / `Pejza`. `fulltext="Hasová"` vrátil **0 zásahů**, přestože klientka v hovorech figuruje. **Název z Pocketu nelze použít jako vyhledávací klíč napřímo.**
+⚠️ **Ověřený problém s přepisem jmen:** Pocket přepisuje totéž jméno různě — `Novak` / `Novák` / `Novák Jan`, `Dvořáková` / `Dvořáčková` (ilustrační; ve skutečnosti 3 různá jména klientů). `fulltext="Hasová"` vrátil **0 zásahů**, přestože klientka v hovorech figuruje. **Název z Pocketu nelze použít jako vyhledávací klíč napřímo.**
 
 ### Nalezení aktivity / OP
 
@@ -440,9 +440,9 @@ Požadovaný řetězec:
 
 | # | Riziko | Dopad | Mitigace |
 |---|---|---|---|
-| 1 | **Špatné spárování klienta** kvůli přepisu jména (`Balint`/`Balent`, `Hasová`/`Hasolová`) | Hovor u cizího klienta | Párovat přes **e-mail/IČO**, ne jméno. Při <1 jistém zásahu **eskalovat na člověka** |
-| 2 | **Duplicitní klienti už v CRM** — ověřeno: `Zbyněk Svoboda` id **613** i **603**, shodný e-mail; `Josef Pokorný` id 212 + 213; id 1074 nese v názvu „DUPLICITA – SMAZAT" | Zápis k nesprávné kopii | Při >1 zásahu nikdy nehádat — předložit uživateli k výběru |
-| 2b | **Shodný e-mail u dvou různých lidí** — ověřeno: `simkrom@seznam.cz` = Jiří Šimek (47) **i** Jan Šimek (52); majitel + jeho s.r.o. sdílí e-mail ve 3 dalších případech | Hovor zapsaný cizí osobě nebo firmě místo člověka | Párovat **e-mail + příjmení**, nikdy e-mail samotný |
+| 1 | **Špatné spárování klienta** kvůli přepisu jména (`Novak`/`Novák`, `Dvořáková`/`Dvořáčková`; ilustrační) | Hovor u cizího klienta | Párovat přes **e-mail/IČO**, ne jméno. Při <1 jistém zásahu **eskalovat na člověka** |
+| 2 | **Duplicitní klienti už v CRM** — ověřeno: klient id **613** i **603**, shodný e-mail; klient id 212 + 213; id 1074 nese v názvu „DUPLICITA – SMAZAT" | Zápis k nesprávné kopii | Při >1 zásahu nikdy nehádat — předložit uživateli k výběru |
+| 2b | **Shodný e-mail u dvou různých lidí** — ověřeno: jeden e-mail = klient id 47 **i** jiný člověk id 52; majitel + jeho s.r.o. sdílí e-mail ve 3 dalších případech | Hovor zapsaný cizí osobě nebo firmě místo člověka | Párovat **e-mail + příjmení**, nikdy e-mail samotný |
 | 3 | **Založení nového klienta** | `company_create` umí jen organizaci → vznikl by záznam **špatného typu** mezi 94 % FO | **Nikdy nezakládat automaticky.** Nový klient = ruční krok v Raynet UI |
 | 3b | **Spoléhání na flag `person`** při rozlišení FO/PO | ~80 záznamů je chybně `person: false`, ač jde o FO | Rozlišovat regexem na `name`, ne flagem |
 | 4 | **Markdown zapsaný do HTML pole** | `###` a `**` viditelné v CRM | Povinný převod MD→HTML + odstranění `<pocket:*>` tagů |

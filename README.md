@@ -22,7 +22,7 @@ Pocket nahrávka → třídění a šablona (S / M / L) → párování klienta 
 Proces je **interaktivní**, ne automatický. Spustíte ho pokynem, skill připraví návrh
 a před zápisem ho nechá potvrdit. Důvod je praktický: Raynet obsahuje přes 1000 klientů,
 z toho ~94 % fyzických osob, mezi nimi už existující duplicity, a Pocket komolí jména
-v přepisech (`Balint`/`Balent`, `Hasová`/`Hasolová`). Špatně spárovaný hovor skončí
+v přepisech (`Novak`/`Novák`, `Dvořáková`/`Dvořáčková`; ilustrační). Špatně spárovaný hovor skončí
 u cizího člověka a nikdo si toho nevšimne. Zápis do CRM je navíc přes MCP **nevratný** —
 žádný `delete` nástroj neexistuje.
 
@@ -33,7 +33,7 @@ Skill se aktivuje sám, když jde o převod hovoru do CRM. Stačí přirozený p
 ```
 zapiš poslední hovor do Raynetu
 zpracuj dnešní hovory
-zapiš ten hovor s Balentem ke klientovi
+zapiš ten hovor s Novákem ke klientovi
 připrav mi dnešní schůzky
 ```
 

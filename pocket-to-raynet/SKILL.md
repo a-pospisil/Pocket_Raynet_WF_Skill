@@ -55,7 +55,7 @@ Vlastník se nikdy nezadává napevno. Každý poradce zapisuje sám za sebe (Ad
 |---|---|
 | „zapiš poslední hovor" | 1 nejnovější nahrávka |
 | „zpracuj dnešní hovory" | `recordingDateAfter` = dnešní půlnoc |
-| „zapiš hovor s Balentem" | konkrétní nahrávka, klient zadaný ručně (nejbezpečnější varianta) |
+| „zapiš hovor s Novákem" | konkrétní nahrávka, klient zadaný ručně (nejbezpečnější varianta) |
 | „připrav dnešní schůzky" / ranní běh | režim **Příprava**, viz konec souboru |
 
 Když to z pokynu nejde určit, zeptej se. Skill si mezi spuštěními nic nepamatuje, stav drží Raynet.
@@ -92,7 +92,7 @@ Klienti jsou záznamy `company`, i fyzické osoby. Hledej v tomto pořadí a **v
 3. `company_list(fulltext=…)`: jen celá slova a prefixy.
 4. `lead_list(…)`: nový zájemce bývá nejdřív lead.
 
-Pocket komolí jména (`Balint`/`Balent`, `Hasová`/`Hasolová`, `Pejro`/`Pejřil`). Zkoušej varianty, jméno z přepisu je nápověda, ne klíč.
+Pocket komolí jména (`Novak`/`Novák`/`Nowak`, `Dvořáková`/`Dvořáčková`; jména jsou ilustrační). Zkoušej varianty, jméno z přepisu je nápověda, ne klíč.
 
 | Výsledek | Co udělat |
 |---|---|
@@ -153,7 +153,7 @@ Text piš podle `references/sablony-zapisu.md` (S / M / L). Když potřebuješ p
 
 **Shrnutí Pocketu je jen rejstřík témat, fakta ber z přepisu.** Diarizace prohazuje mluvčí a AI shrnutí přisuzuje výroky
 a plány špatné osobě. Případy z 22. 9.–1. 10. 2026: „klient odjíždí do Keni“ (do Keni jel Adam, klient na kongres),
-„dcera Petra Balenta“ (šlo o Kořenka), „Adam jede do lázní“ (jela klientka). Proto:
+„dcera jiného klienta“ (šlo o klienta, se kterým se mluvilo), „Adam jede do lázní“ (jela klientka). Proto:
 
 1. Kdo co řekl, udělá, slíbil, kam jede, částky a data: vždy z přepisu (`get_pocket_conversation` s přepisem), ne ze shrnutí.
 2. Jména osob a firem ověř proti Raynetu a e-mailům. Osoba nebo firma, která je ve shrnutí, ale v přepisu nezazní, je chyba
@@ -183,7 +183,7 @@ mBank, Oberbank, MONETA) podle metodiky:
 ### 8. Ukaž náhled a nech potvrdit
 
 ```
-Klient:     Peter Balent (id 599, e-mail + příjmení ✓, vlastník Adam)
+Klient:     Jan Ukázkový (id 999, e-mail + příjmení ✓, vlastník Adam)
 OP:         OP-26-0462 – Neúčelový úvěr, zástava byt Prokopova (fáze: Identifikace požadavku)
 Aktivita:   DOKONČIT schůzku 32195 „Konzultace a výpočet“ (naplánováno 21. 9. 15:15, proběhlo 21. 9. 16:02–16:47)
             visí otevřené: telefonát „Doplnit výpisy“ (18. 9.) – beze změny

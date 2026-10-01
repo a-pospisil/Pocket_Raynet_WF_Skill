@@ -42,11 +42,17 @@ Rozbor k 2026-10-01: 56 proher (z toho 3 testy) a 71 zrušených OP. Důvody pod
 | 4 | **Duplicita / test / chybně založeno** | 6 (+24) | nová položka; lépe ale takové OP rovnou zrušit nebo smazat, ať nekazí úspěšnost |
 | 5 | **Klient nedodal podklady** | 1 (+9) | nová položka |
 
-Dále:
-- 200 přejmenovat na „Záměr koupě nevyšel / nemovitost neprošla“ (dnes v ní sedí jen 1 případ ze 6),
-- 126 „termín“ zrušit (0 použití),
-- u „jiná“ vyžadovat text důvodu (dnes „.“, „?“, „neznámo“),
-- **zrušené OP mají důvod taky vyplňovat**: dnes ho nemá ani jeden ze 71.
+**Doporučené kroky** (číselník přes MCP měnit nejde, kroky 1–5 dělá admin v UI; přetřídění v kroku 6 umí Hermes přes MCP):
+
+| # | Krok | Kde | Proč |
+|---|---|---|---|
+| 1 | Přejmenovat 203 „nezvedá“ → **„Klient přestal komunikovat“** | číselník Kategorie prohry | nejčastější důvod (14), historie zůstane |
+| 2 | Přidat **„Klient si to rozmyslel / odložil“**, **„Klient řeší napřímo v bance / u developera“**, **„Duplicita / test / chybně založeno“**, **„Klient nedodal podklady“** | totéž | pokryjí 18 proher a 41 zrušených OP |
+| 3 | Přejmenovat 200 → **„Záměr koupě nevyšel / nemovitost neprošla“** a 125 → **„Konkurence (jiný poradce)“** | totéž | dnes v 200 sedí správně jen 1 případ ze 6 |
+| 4 | Zrušit 126 „termín“ | totéž | 0 použití |
+| 5 | **Text důvodu povinný** ve fázi Prohra i Zrušeno (pole `losingReason` / Kategorie prohry jako povinné od fáze) | Nastavení evidence » OP » Nastavení polí (A/4414383755281) | u „jiná“ dnes „.“, „?“, „neznámo“; zrušené OP nemají důvod ani jeden ze 71 |
+| 6 | Přetřídit 53 proher (a zrušené OP s dohledaným důvodem) podle nových kategorií | Hermes přes MCP `businessCase_update(losingCategory, losingReason)`, seznam ke schválení | statistiky proher začnou dávat smysl |
+
 
 **Kde se prohrává** (53 proher): Identifikace 22 · Nabídnuto 13 · Podaná žádost 7 · Čeká na schválení 5 · Kompletace 3 · Schváleno 3.
 Klienti, kteří přestali komunikovat, mizí nejčastěji **po odeslání nabídky** (7 ze 14). Bod 2 (povinný další krok u OP) míří

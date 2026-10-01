@@ -32,7 +32,9 @@ Platí vždy, bez výjimky. Zdůvodnění: `docs/NAVRH-ZAPISY.md`, kap. 4a.
    tu původní (krok 5, větev A). Aktivitu naplánovanou na jiný den ani nenaplánovanou nedokončuj (Adam, 1. 10. 2026).
 3. **Při nejistotě se zeptej** (klient, OP, aktivita k dokončení, rozdělení hovoru, posun fáze). Zápis přes MCP nejde smazat.
 4. **Nic nemaž a nic neruš.** Zrušení schůzky v Raynetu ji smaže i v Google kalendáři.
-5. **Rodná čísla a čísla účtů nikdy.** Ani v textu, ani ve vlastním poli `Rodne_cisl`.
+5. **Rodná čísla a čísla účtů jen z dokumentu, nikdy z hovoru.** Z přepisu ani ze shrnutí Pocketu je nepřebírej (čísla komolí).
+   Do karty klienta (`Rodne_cisl`, `bankAccount`) je zapiš jen z dokumentu, který máš k dispozici (DP, výpis, smlouva, doklad),
+   v náhledu s uvedením zdroje (Adam, 1. 10. 2026). V textu zápisu je nikdy neuváděj.
 6. **Bez potvrzení se nic nezapíše.** Nejdřív náhled, pak zápis.
 
 ## Postup
@@ -144,7 +146,8 @@ Když z obsahu plyne případ, který mezi OP klienta není, **zeptej se**.
 `get_pocket_conversation(recording_ids=[…])` vrátí `summary.markdown` a `recordingDate` = **konec** hovoru (→ `scheduledTill`).
 
 Text piš podle `references/sablony-zapisu.md` (S / M / L). Pocket Summary je surovina, ne výsledek: zkrať, uspořádej, ověř
-proti přepisu (diarizace prohazuje mluvčí). Když potřebuješ převést hotový Markdown, použij `scripts/md_to_raynet_html.py`
+proti přepisu. Diarizace prohazuje mluvčí a **AI shrnutí přisuzuje Adamovy výroky klientovi** (1. 10. 2026: „klient odjíždí do Keni“,
+přitom do Keni jel Adam a klient na kongres). Kdo co dělá, kam jede, co slíbil: vždy podle přepisu, ne podle shrnutí. Když potřebuješ převést hotový Markdown, použij `scripts/md_to_raynet_html.py`
 (odstraní `<pocket:*>` bloky a rediguje RČ a čísla účtů).
 
 Do textu patří i interní věci: další postup, rozdělení práce, ladění s kolegou. Zápis je interní, klient vidí jen návrh e-mailu.
@@ -227,7 +230,7 @@ Na kartu klienta patří **maximum toho, co z hovoru jistě plyne** a platí nap
   cíle, servisní příležitosti, preferovaná komunikace. Ruční text zůstane pod „Původní poznámky“.
 
 Před zápisem `company_get`. Prázdné doplň, existující přepiš jen jistou hodnotou a změnu „staré → nové“ ukaž v náhledu.
-Nikdy RČ ani číslo účtu. Co MCP neumí (jméno a příjmení zvlášť, titul, datum narození, příznak fyzické osoby), uveď v souhrnu
+RČ a číslo účtu jen z dokumentu (tvrdé pravidlo 5). Co MCP neumí (jméno a příjmení zvlášť, titul, datum narození, příznak fyzické osoby), uveď v souhrnu
 jako „doplnit v UI“. Pole, klíče a šablona profilu: `references/sablony-zapisu.md`, „Karta klienta“.
 
 ### 12. Souhrnný úkol

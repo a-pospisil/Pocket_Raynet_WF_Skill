@@ -149,7 +149,7 @@ v Nastavení » Vlastní pole, přes REST v `GET /api/v2/customField/config/`. P
 | `Najmy_v_DP_bb662` | nájmy v daňovém přiznání | ano/ne |
 | `Soucasny_c_952ff` | současný čistý nájem | **text** (číslo jako řetězec) |
 | `DPFO_posle_46c18`, `DPFO_predp_6db0e` | DPFO za poslední a předposlední rok | soubor (MCP nenahraje) |
-| `Rodne_cisl_ed0da` | rodné číslo | text, **skill nevyplňuje** |
+| `Rodne_cisl_ed0da` | rodné číslo | text, **jen z dokumentu, nikdy z hovoru** |
 | `Zadatel_v__a594e`, `Alternativ_b3c97` | význam nejasný | ano/ne, nevyplňovat |
 
 **Obchodní případ.** Skill pole OP **nemění** (Adam, 1. 10. 2026: jen návrh posunu fáze), ale čte je pro kartu OP a bonitu:

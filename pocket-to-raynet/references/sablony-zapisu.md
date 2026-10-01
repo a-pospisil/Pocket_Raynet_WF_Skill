@@ -30,7 +30,8 @@ ukazují jen formát.
   se píšou jako seznam s legendou: tučná legenda pořadí údajů, pod ní `<ol>`, jedna položka = jeden řádek, údaje oddělené ` · `.
 - **Čísla po česku:** `3 500 000`, `4,79 %`, `3,5 mil.`; částky v Kč bez „Kč“, pokud je to z kontextu jasné.
 - **Neznámé = `?`** a položka v seznamu „Doptat“. Nic nedomýšlet. Nejisté z přepisu (prohozené role, zkomolené číslo) = `[k ověření]`.
-- **Rodná čísla a čísla účtů nikdy.** Převodní skript je rediguje, při ručním psaní taky.
+- **Rodná čísla a čísla účtů v textu nikdy.** Převodní skript je rediguje, při ručním psaní taky. Do polí karty klienta jen z dokumentu.
+- **Kdo co řekl a udělal, ověř v přepisu.** Shrnutí Pocketu přisuzuje Adamovy plány a sliby klientovi (cesta do Keni 1. 10. 2026).
 - **Stopa na konci** každé aktivity: `<p><i>AI zápis · Pocket &lt;recordingId&gt;</i></p>`. K tomu štítek `AI zápis`.
 
 ## Výběr šablony
@@ -241,7 +242,7 @@ v náhledu. Nejisté (zkomolené číslo, prohozený mluvčí) nezapisuj a dej d
 | `notice` | **Profil klienta** (níže) | |
 
 Nemění se: `rating`, `state` (mění Raynet při výhře), `owner`, `name`, `companyClassification1` (VIP, tipař, bankéř… patří
-partnerům, ne klientům), **`bankAccount` nikdy**. MCP neumí jméno a příjmení zvlášť, titul, datum narození ani příznak fyzické
+partnerům, ne klientům). **`bankAccount` jen z dokumentu** (výpis, smlouva), nikdy z hovoru. MCP neumí jméno a příjmení zvlášť, titul, datum narození ani příznak fyzické
 osoby: věk nebo rok narození patří do profilu, ostatní skill uvede v souhrnu „doplnit v UI“.
 
 ### Vlastní pole (`customFields`)
@@ -254,7 +255,7 @@ osoby: věk nebo rok narození patří do profilu, ostatní skill uvede v souhrn
 | `Najmy_v_DP_bb662` | nájmy v daňovém přiznání | ano/ne |
 | `Soucasny_c_952ff` | současný čistý nájem celkem za měsíc | **text** (číslo jako řetězec, např. `"27000"`) |
 
-`Rodne_cisl_ed0da` skill nevyplňuje (tvrdé pravidlo 5), `Zadatel_v__a594e` a `Alternativ_b3c97` mají nejasný význam, nevyplňovat.
+`Rodne_cisl_ed0da` (RČ) jen z dokumentu (DP, doklad, smlouva), nikdy z hovoru, v náhledu se zdrojem (tvrdé pravidlo 5); `Zadatel_v__a594e` a `Alternativ_b3c97` mají nejasný význam, nevyplňovat.
 Klíče jsou z průzkumu instance k 2026-10-01; nové pole se objeví až u vyplněného záznamu (`raynet-reference.md`, „Vlastní pole“).
 
 ### Profil klienta (`notice`)

@@ -84,7 +84,8 @@ při každém běhu.
 - **Hey Pocket** — plán Pro (kvůli `get_pocket_conversation`)
 - **Raynet MCP** — instance `evergreen`, denní limit 24 000 requestů
 - Vlastník aktivit se zjišťuje za běhu z přihlášeného uživatele Raynetu
-- Pro bonitu: přístup k metodice bank (repo s metodikou, zatím Adamův vault `wiki/metodiky/`)
+- Pro bonitu: přístup k metodice bank (cíl: Evergreen app jako jediné místo, zatím Adamův vault `wiki/metodiky/`)
+- Raynet plán Professional (limity: 50 automatizací za měsíc, 8 API klíčů, 25 povinných polí)
 
 ## Převodní skript
 

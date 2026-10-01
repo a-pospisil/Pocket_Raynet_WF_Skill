@@ -4,8 +4,8 @@ K 2026-10-01. Vychází z celé nápovědy Raynetu (323 článků), REST API v2,
 „evergreen“ a ze zkušebních zápisů 1. 10. 2026. Odkazy na nápovědu a plné poznámky: `docs/RAYNET-MANUAL-POZNAMKY.md`
 („A/<id>“ = `https://support.raynetcrm.com/hc/cs/articles/<id>`).
 
-**Potřeba ověřit nejdřív:** plán Raynetu (Professional, nebo Ultimate). Mění se podle něj limity: povinná pole 25 / bez limitu,
-automatizace 50 / 1000 průběhů za měsíc, webhooky 8 / 24.
+**Plán: Professional** (Adam, 1. 10. 2026). Limity: 100 vlastních polí, z toho 25 povinných · automatizace 50 průběhů
+za měsíc · 8 webhooků · 8 API klíčů (zdroj: https://raynet.cz/cena/, A/17161403974941, A/13505394647837).
 
 ## Shrnutí
 
@@ -26,7 +26,7 @@ a pipeline. Úklid úkolů po termínu je jednorázový, potom je potřeba zavř
 | 7 | **Participanti OP** (spoludlužník, ručitel, makléř, tipař) a **vztahy mezi klienty** (domácnost). | Nastavení evidence (A/205141569, A/360016817971) | Hovor s manželkou nebo rodičem se dá navázat na OP dlužníka. Snižuje riziko zápisu pod jiného klienta. | 15 min |
 | 8 | **Sdílené filtry na nástěnce:** OP bez banky / zdroje / odhadu, OP bez další aktivity, úkoly po termínu, prohry bez kategorie, záznamy se štítkem „AI zápis“ za týden. | Seznamy » Uložit filtr, Nástěnka (A/5883883874705) | Týdenní kontrola kvality dat i AI zápisů za 5 minut. | 1 h |
 | 9 | **Kategorie aktivit zredukovat** na ~5. „Soukromá aktivita“ aktivitu před kolegy neskrývá (A/4404457810705). | Nastavení » Kategorie aktivit (A/206377235) | Dnes 8 kategorií, většinou nepoužité (ve vzorku `category: null`). | 30 min |
-| 10 | **Samostatný API klíč nebo integrační licence „Hermes“** pro každého kolegu. | Nastavení » API klíče (A/360032478072) | Webhook a historie změn ukážou `source=api` + název klíče, takže zápisy AI půjde auditovat. | 30 min |
+| 10 | **API klíč „Hermes“** pro každého kolegu (Professional = max. 8 klíčů, při víc poradcích integrační licence). | Nastavení » API klíče (A/360032478072) | Webhook a historie změn ukážou `source=api` + název klíče, takže zápisy AI půjde auditovat. | 30 min |
 
 **Automatizace šetřit:** Professional má jen **50 průběhů za měsíc** a časový spouštěč spotřebuje průběh za každý nalezený
 záznam (A/13505394647837). Hodí se na pár věcí (prohra bez kategorie → notifikace). Větší logiku dát do Herma přes webhook,
@@ -62,7 +62,6 @@ stačí 1 pole „Provize (Kč)“ jako Konečná cena OP a reporty ziskovosti z
 
 ## Co ověřit v instanci
 
-- plán (Professional / Ultimate),
 - jestli povinná pole platí i pro zápisy přes API a MCP,
 - kde je číselník kategorií prohry a jestli se na ni ptá dialog při Prohře,
 - odkud vznikají automatické úkoly (web, historie automatizací),

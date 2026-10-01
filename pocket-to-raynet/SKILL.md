@@ -152,7 +152,8 @@ Do textu patří i interní věci: další postup, rozdělení práce, ladění 
 **Bonita (u šablony L, a kdykoli se v hovoru mění příjmy, závazky nebo záměr).** Pro **všech 8 bank** (ČS, ČSOB, KB, RB, UCB,
 mBank, Oberbank, MONETA) podle metodiky:
 
-- Zdroj pravidel: repo s metodikou (zrcadlo `wiki/metodiky` z Adamova vaultu); dokud neexistuje, vault `wiki/metodiky/`.
+- Zdroj pravidel: metodika bank na jednom místě v **Evergreen app** (napojení se připravuje). Do té doby Adamův vault `wiki/metodiky/`.
+  U kolegy bez přístupu k metodice skill bonitu nepočítá a napíše „bonita: chybí přístup k metodice“.
   Začni `rychla-reference.md`, postup výpočtu a vzorce v `kalkulacky-bank.md` („Postup výpočtu krok za krokem“, „Kontrolní čísla“).
   Velké stránky nečti celé: blok „⚡ Rychle“, pak `grep -n "^## "` a jen potřebná sekce.
 - Sazby z `temata/sazby-a-slevy-bank.md` (nejvýš 1 měsíc staré, jinak označit), stres podle metodiky banky.

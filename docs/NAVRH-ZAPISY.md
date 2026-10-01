@@ -153,7 +153,9 @@ Kladu je postupně v chatu, odpovědi doplním sem.
     Pozor: schránka hlásí primární adresu `info@egfin.cz`.
 7m. ✅ **Příprava před schůzkou: automaticky ráno.** Hermes doplní do dnešních naplánovaných aktivit poradce blok „Příprava: doptat · ověřit · mít po ruce“ z karty OP. Původní text pozvánky zůstane (Adam, 1. 10.).
 7n. ✅ **Čas konce hovoru:** `phonecall_create(status=COMPLETED)` nastaví `completed` na čas zápisu. Následný `phonecall_update(completed=<konec>)` **bez** `status` ho opraví (ověřeno 1. 10. na 37590: 18:37 → 18:05).
-7o. ✅ **Metodika pro Hermy kolegů: samostatné repo** (např. `evergreen-metodika`), do kterého se automaticky zrcadlí `wiki/metodiky` a koncepty LTV, DSTI a DTI. Vault s osobními údaji zůstává jen Adamovi (Adam, 1. 10.). Repo zatím nezaloženo.
+7o. ✅ **Metodika pro Hermy kolegů: napojit na Evergreen app**, aby byla vždy na jednom místě (Adam, 1. 10., upřesnění k dřívější
+    volbě samostatného repa). Samostatné repo se nezakládá. Vault s osobními údaji zůstává jen Adamovi. Do napojení čte skill metodiku
+    z vaultu (`wiki/metodiky/`), běží tedy jen u Adama.
 7p. ✅ **Štítek „AI zápis“** na všech aktivitách ze skillu (Adam, 1. 10.).
 7q. ✅ **Ruční text v kartě OP se zachová** pod nadpisem „Původní poznámky“, strukturovaná karta jde nad něj (Adam, 1. 10.).
 8. ~~Úkoly pro tým a pro klienta.~~ Vyřešeno pravidlem z 1. 10. (drobnosti do jednoho úkolu, klient do zápisu a e-mailu).

@@ -48,6 +48,10 @@ Platí vždy, bez výjimky. Zdůvodnění: `docs/NAVRH-ZAPISY.md`, kap. 4a.
 7. **Zápis nikdy do Události.** Událost (`Event`) nemá v rozhraní Raynetu pole „Výsledek“: zápis uložený do jejího `solution`
    se na kartě klienta nezobrazí. Zápis patří jen do Schůzky (`Meeting`) nebo Telefonátu (`PhoneCall`). Naplánovaná Událost
    se řeší větví A2 v kroku 9 (Adam, 12. 10. 2026).
+8. **Tykání a vykání striktně.** Každá zpráva pro člověka (e-mail, SMS, WhatsApp) je celá v registru, který pisatel
+   s příjemcem používá: V1 vykání + příjmení, V2 vykání + křestní jméno, T tykání. Registr se bere z pokynu, z karty v Raynetu,
+   z posledních e-mailů pisatele nebo z jeho řeči v přepisu; bez důkazu vždy V1. Návrh se před ukázáním kontroluje skriptem
+   `scripts/check_tykani.py` a s nálezem se neukazuje (Adam, 12. 10. 2026). Postup: `references/email-style.md`, „Tykání a vykání“.
 
 ## Postup
 
@@ -249,7 +253,8 @@ Fáze OP:    návrh Identifikace požadavku → Nabídnuto (zapíše se jen po p
 Text:       <prvních 5 řádků zápisu>
 ```
 
-Do náhledu patří i řádky `Účastníci:` (vlastník klienta, když není zapisující) a `Chyby Pocketu:` (krok 7).
+Do náhledu patří i řádky `Účastníci:` (vlastník klienta, když není zapisující), `Chyby Pocketu:` (krok 7) a u každého návrhu
+zprávy `Oslovení:` (registr, oslovení, zdroj, výsledek kontroly skriptem).
 U naplánované Události (větev A2) místo řádku `Aktivita:`:
 
 ```
@@ -368,6 +373,8 @@ Adam ponechal navržený úkol jen u 1 ze 7 hovorů.
 - Návrh e-mailu klientovi patří do popisu úkolu po úvodní schůzce, po nabídce a vždy, když v hovoru zazní „pošlu vám…“.
   Když uživatel chce e-mail „sem do chatu“, dej ho do chatu ke zkopírování (Adam, 12. 10. 2026). Co se vyřešilo na místě
   (např. faktura zaplacená při schůzce), do e-mailu nepiš.
+- **Oslovení a registr** urči před psaním (tvrdé pravidlo 8, `references/email-style.md`, „Tykání a vykání“) a hotový text
+  prožeň `scripts/check_tykani.py`. Když registr v kartě chybí nebo se změnil, navrhni doplnit řádek `Komunikace:`.
 - **Návrh e-mailu** piš podle `references/email-style.md` (stavba a formulace z Adamových e-mailů a pravidla naučená z jeho úprav).
   Podklady chtěj jen ty, které chybí: co je potřeba podle typu případu a kde zjistit, co už přišlo, je v `references/podklady.md`.
   Co si poradce zajistí sám (LV, kupní smlouva z katastru), po klientovi nechtěj.
@@ -463,4 +470,5 @@ Načti podle potřeby:
   nastavení Raynetu.
 
 Skripty ve `scripts/` potřebují jen Python 3 se standardní knihovnou: `match_name.py` (párování jmen), `md_to_raynet_html.py`
-(Markdown → HTML, redakce), `make_email_draft.py` (koncept e-mailu), `audit_log.py` (audit log).
+(Markdown → HTML, redakce), `make_email_draft.py` (koncept e-mailu), `check_tykani.py` (tykání a vykání v návrhu zprávy),
+`audit_log.py` (audit log).

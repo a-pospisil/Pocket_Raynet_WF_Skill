@@ -348,7 +348,7 @@ v Raynetu“).
 <p><b>Ostatní závazky:</b> KK limit 50 000 (ČS) · leasing auto 6 500 do 2027</p>
 <p><b>Cíle:</b> portfolio 5 bytů do 2030, cash flow > 0 na byt · preferuje FO, s.r.o. zvažuje</p>
 <p><b>Servis:</b> konec fixace ČSOB 6/2028 → refinancování (ozvat se 3 měs. předem)</p>
-<p><b>Komunikace:</b> preferuje e-mail, hovory po 17:00</p>
+<p><b>Komunikace:</b> Adam vyká (V1 „Dobrý den, pane Ukázkový“) · preferuje e-mail, hovory po 17:00</p>
 <p><b>Původní poznámky</b></p>
 <p>… ruční text beze změny …</p>
 ```

@@ -58,6 +58,7 @@ Tyhle hranice nejsou opatrnost, ale technická omezení MCP ověřená auditem:
 | **Nepřejmenuje mluvčí v Pocketu** | MCP Pocketu to neumí. Skill napíše, koho přejmenovat, a opraví to v zápisu podle přepisu. |
 | **Nenahraje přílohu** | Jen odkaz URL. Pocket audio navíc expiruje po hodině. |
 | **Nezapíše rodné číslo ani číslo účtu z hovoru** | Redakce probíhá automaticky v převodním skriptu. Do karty klienta jen z dokumentu. |
+| **Nesplete tykání a vykání** | Registr bere z karty, e-mailů nebo řeči pisatele, bez důkazu vyká; každý návrh prochází kontrolou skriptem. |
 | **Neradí k fakturaci** | V zápisu je fakturace jen tak, jak ji popsal klient. |
 | **Nezapíše bez potvrzení** | Vždy nejdřív ukáže návrh. |
 
@@ -71,7 +72,7 @@ pocket-to-raynet/
 │   ├── raynet-reference.md         # uživatelé, číselníky, vlastní pole, pasti
 │   ├── pocket-reference.md         # tvary odpovědí, formáty id, limity
 │   ├── html-formatting.md          # co Raynet v HTML polích unese
-│   ├── email-style.md              # jak Adam píše e-maily + naučená pravidla
+│   ├── email-style.md              # jak Adam píše e-maily, tykání a vykání, naučená pravidla
 │   └── podklady.md                 # jaké podklady chtít podle případu, kde zjistit, co přišlo
 ├── scripts/                        # viz Nástroje
 └── assets/
@@ -109,7 +110,7 @@ Skill je složka `pocket-to-raynet/`. Ve všech prostředích potřebuje připoj
 
 ## Nástroje
 
-Čtyři skripty, jen standardní knihovna Pythonu 3, bez závislostí.
+Pět skriptů, jen standardní knihovna Pythonu 3, bez závislostí.
 
 **Párování jmen** — `scripts/match_name.py`. Filtr `name` v Raynetu rozlišuje diakritiku, přepis bývá v pádě a cizí jména
 jsou v CRM zapsaná foneticky. Skript z přepsaného jména vyrobí hledací výrazy (včetně českého přepisu: `Schneider` → `Šna…`)
@@ -126,6 +127,14 @@ python3 pocket-to-raynet/scripts/md_to_raynet_html.py summary.md --check   # re�
 
 **Koncept e-mailu do pošty** — `scripts/make_email_draft.py`. Vyrobí `.eml` s hlavičkou `X-Unsent: 1`, takže se v Apple Mail
 otevře jako koncept k úpravě, ne jako přijatá zpráva jen pro čtení. Nic se neodesílá.
+
+**Tykání a vykání** — `scripts/check_tykani.py`. Poslední kontrola návrhu zprávy: najde tvary druhého registru (tykací
+slovesa a zájmena ve vykání, velké V a vykací slovesa v tykání, malé „vám“ jednomu člověku, nesedící oslovení). Návrh
+s nálezem se neukazuje. Registr určuje skill podle `email-style.md`.
+
+```bash
+python3 pocket-to-raynet/scripts/check_tykani.py --rezim vykani --prijemcu 1 navrh.txt
+```
 
 **Audit log** — `scripts/audit_log.py`. Řádek za každou akci; přepis bez uloženého původního stavu odmítne. `stats` ukáže
 u každého typu akce podíl návrhů potvrzených beze změny.

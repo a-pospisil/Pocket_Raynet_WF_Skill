@@ -176,6 +176,8 @@ Kladu je postupně v chatu, odpovědi doplním sem.
     a na pokyn v chatu, `deadline` = nejbližší otevřený bod, po odškrtnutí všeho návrh dokončit úkol.
 7w. ✅ **Měsíční příjem ze závislé činnosti je vždy čistý** (Adam, 12. 10.). Hrubý z hovoru se přepočte na čistý, doložená
     čistá mzda ho později přepíše.
+7x. ✅ **Tykání a vykání striktně** (Adam, 12. 10.): registr V1 / V2 / T podle pisatele, zdroj karta → e-maily → přepis,
+    bez důkazu vykat; kontrola `check_tykani.py` před každým návrhem zprávy; registr se ukládá do řádku `Komunikace:` v kartě.
 8. ~~Úkoly pro tým a pro klienta.~~ Vyřešeno pravidlem z 1. 10. (drobnosti do jednoho úkolu, klient do zápisu a e-mailu).
 9. Návrh e-mailu klientovi se shrnutím.
 10. ~~Posun fáze a vyplnění polí OP.~~ Vyřešeno 12. 10. (7t): pole OP u evidentního případu, fáze jen návrh.

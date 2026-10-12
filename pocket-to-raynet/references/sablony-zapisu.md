@@ -17,6 +17,7 @@ ukazují jen formát.
 - [Souhrnný úkol a návrh e-mailu](#souhrnný-úkol-a-návrh-e-mailu)
 - [Příprava před schůzkou](#příprava-před-schůzkou)
 - [Karta klienta: maximum údajů](#karta-klienta-maximum-údajů)
+- [Pole OP z hovoru (jen na pokyn)](#pole-op-z-hovoru-jen-na-pokyn)
 
 ## Zásady
 
@@ -236,15 +237,17 @@ Adam, 1. 10. 2026: **na kartu klienta doplnit maximum údajů.** Karta klienta d
 (kontakty, domácnost, příjmy, portfolio, úvěry a konce fixací pro servis). Karta OP drží konkrétní případ.
 
 Postup: `company_get` → porovnat s tím, co jistě plyne z hovoru → v náhledu ukázat **prázdné → nové** a **staré → nové** →
-po potvrzení jedno `company_update`. Prázdné pole se doplní. Existující hodnotu přepiš, jen když je nová jistá, a změnu ukaž
+po potvrzení jedno `company_update`. U každého pole uveď i **odkud** (krátká citace nebo čas v přepisu, u dokumentu jeho
+název), ať jde hodnota rychle ověřit. Prázdné pole se doplní. Existující hodnotu přepiš, jen když je nová jistá, a změnu ukaž
 v náhledu. Nejisté (zkomolené číslo, prohozený mluvčí) nezapisuj a dej do „Doptat“.
 
 ### Standardní pole (`company_update`)
 
 | Pole | Co | Pozn. |
 |---|---|---|
-| `email`, `email2`, `phone` | kontakty | Jiný e-mail než stávající → `email2`, nikdy nepřepsat primární bez potvrzení. |
+| `email`, `email2`, `phone` | kontakty (`phone` = Tel 1) | Jiný e-mail než stávající → `email2`, nikdy nepřepsat primární bez potvrzení. Vždy s `addressName` (níže). |
 | `street`, `city`, `zipCode`, `province`, `country` | adresa bydliště | Jen adresa, kterou klient uvedl jako svou, ne adresa nemovitosti. `country` jako ISO kód (CZ). |
+| `addressName` | název adresy | **Povinný, jakmile posíláš jakékoli adresní nebo kontaktní pole**, jinak update neprojde. Stávající hodnotu z `company_get` zachovej, u prázdné „Sídlo klienta“. |
 | `regNumber`, `taxNumber`, `taxPayer` | IČO a DIČ (OSVČ), plátce DPH (`YES`/`NO`) | U klienta s s.r.o. patří IČO firmy k firmě, ne k osobě. |
 | `contactSource` | odkud klient přišel | 156 doporučení tipaře · 82 vlastní kontakt · 81 doporučení (netipař) · 79 web/poptávka · 179 sociální sítě · 196 workshop |
 | `category` | **tipař** | Číselník jmen tipařů (176 Bez tipaře, 205 Monopoly Advisory, 180 Úspěšné reality…; `raynet://codelist/companyCategory`). **Určuje dělení provize** → měnit jen prázdné, a když se tipař v hovoru výslovně jmenuje; jinak se zeptej. |
@@ -257,16 +260,39 @@ osoby: věk nebo rok narození patří do profilu, ostatní skill uvede v souhrn
 
 ### Vlastní pole (`customFields`)
 
-| Klíč | Obsah | Typ |
-|---|---|---|
-| `Pocet_deti_cf874` | počet dětí (vyživovaných) | celé číslo |
-| `zamestnava_ffa65` | zaměstnavatel | text |
-| `pracovni_p_f7e4d` | pracovní pozice | text |
-| `Najmy_v_DP_bb662` | nájmy v daňovém přiznání | ano/ne |
-| `Soucasny_c_952ff` | současný čistý nájem celkem za měsíc | **text** (číslo jako řetězec, např. `"27000"`) |
+Co z hovoru jistě plyne, jde i do vlastních polí. Klíče, typy a přesné hodnoty roletek: `raynet-reference.md`, „Vlastní pole“.
+Do `customFields` posílej **jen klíče, které měníš** (`null` nebo prázdná hodnota pole smaže). Roletky jen přesným textem.
 
-`Rodne_cisl_ed0da` (RČ) jen z dokumentu (DP, doklad, smlouva), nikdy z hovoru, v náhledu se zdrojem (tvrdé pravidlo 5); `Zadatel_v__a594e` a `Alternativ_b3c97` mají nejasný význam, nevyplňovat.
-Klíče jsou z průzkumu instance k 2026-10-01; nové pole se objeví až u vyplněného záznamu (`raynet-reference.md`, „Vlastní pole“).
+| Co zazní v hovoru | Klíč | Zápis |
+|---|---|---|
+| vzdělání | `vzdelani_b79fe` | roletka, např. `vysokoškolské` |
+| rodinný stav | `rodinny_st_adceb` | roletka, např. `ženatý / vdaná` |
+| zúžené SJM | `Zuzeni_SJ_f0b36` | `Ano` / `Ne` |
+| počet vyživovaných dětí | `Pocet_deti_cf874` | číslo |
+| banka hlavního účtu | `hlavni_bez_5fef9` | `ČSOB` · `KB` · `ČS` · `RB` · `Fio` · `Airbank` · `mBank` |
+| čistý měsíční příjem ze zaměstnání | `mesicni_pr_0a298` | číslo, např. `65000` |
+| zaměstnavatel · pozice | `zamestnava_ffa65` · `pracovni_p_f7e4d` | text |
+| nástup k zaměstnavateli | `nastup_fbbb1` | datum `"2019-03-01"` |
+| druh pracovního poměru | `Druh_fcd16` | `HPP` · `DPČ` · `DPP` |
+| náklady na bydlení · výdaje domácnosti (měsíčně) | `DruhBankaJ_57559` · `DruhBankaJ_f41e1` | text |
+| stávající úvěry | `DruhBankaJ_a886e`, `_4de8f`, `_6314d`, `_8f94a`, `_cae7c` (řádky 1–5) | text, jeden úvěr na řádek: `druh / banka / jistina / úrok % / splátka / měsíců / fixace / KF`; neznámý údaj `?` |
+| nájmy v daňovém přiznání | `Najmy_v_DP_bb662` | `true` / `false` |
+| současný čistý nájem celkem za měsíc | `Soucasny_c_952ff` | **text** `"27000"` |
+| čistý nájem po koupi | `Budouci_5f2ff` | **text** `"39000"` |
+| od kdy podniká · obor | `Pocatek_po_ab1d0` · `Druh_cinno_d75a7` | datum · text |
+| svobodné povolání | `Svobodne_p_705f3` | roletka (lékař, advokát, IT…) |
+| výdajový paušál | `Vyse_pausa_4549e` | `Bez paušálu` · `80 %` · `60 %` · `40 %` |
+| režim paušální daně | `Zadatel_v__a594e` | `true` / `false` |
+
+Řádky úvěrů plň shora a přepiš jen ty, které se v hovoru týkají stejného úvěru; řádek CELKEM (`DruhBankaJ_4c59a`) jen když
+jsou známé všechny úvěry. Stejné údaje patří i do Profilu klienta (Ostatní závazky, Nemovitosti), pole jsou pro rychlý přehled.
+
+**Nikdy z hovoru:** `Rodne_cisl_ed0da` (RČ), `cislo_OP_d2c59`, `OP_vydal_abab5`, `platnost_O_5ac2f`, `rodne_prij_1de2b`,
+`statni_pri_8265e` a `bankAccount`. Jen z dokumentu (DP, doklad, výpis, smlouva) a v náhledu se zdrojem (tvrdé pravidlo 5).
+**Jen z výpočtu BT kredit, nikdy odhad:** `Radek_101__b1dea` (ČS), `Radek_102__56301` (ČSOB HB), `Radek_37_z_d1a4d` (RB),
+`Radek_74_z_a6a87` (KB), `mBank_9af71`, `VysledekCS_a6436`, `Alternativ_b3c97`. **Nevyplňovat:** `Doplnujici_a57c0`
+(profil je v `notice`), `Bety_8f936` (význam neznámý). **Pole typu soubor** (DPFO, DPPO, výkazy, rozvahy, Přehled úvěrů) jen čti:
+říkají, co už v CRM je (`podklady.md`); nahrává je člověk v UI.
 
 ### Profil klienta (`notice`)
 
@@ -292,3 +318,30 @@ v Raynetu“).
 ```
 
 Prázdný řádek vynech. Údaje o případu (záměr, bonita, strategie konkrétního úvěru) sem nepatří, jsou v kartě OP.
+
+## Pole OP z hovoru (jen na pokyn)
+
+Ve výchozím běhu skill pole OP nemění, jen navrhne posun fáze (Adam, 1. 10. 2026). Tato tabulka platí, když uživatel výslovně
+řekne „doplň i pole OP“, a pro **nový OP** (výjimka v kroku 6), kde se při založení vyplní to, co jistě zaznělo.
+
+| Co zazní | Pole | Zápis |
+|---|---|---|
+| účel a typ úvěru | `category` + `Ucel_uveru_47dd5` | 116 hypotéka · 184 podnikatelský · 169 ze stavebního spoření · 189 spotřebitelský; účel roletkou (`koupě`, `refinancování`, `rekonstrukce`…) |
+| požadovaná výše | `totalAmount` + `vyse_uveru_ad8b6` | číslo, obě pole stejně |
+| hodnota nemovitosti nebo zástavy | `Hodnota_za_21c14` | číslo |
+| banka | `producent_6ef95` | celé obchodní jméno z roletky (`ČSOB Hypoteční banka, a.s.`); banka mimo seznam → jen do karty OP a zeptat se |
+| sazba · splatnost | `urokova_sa_51229` · `Splatnost_7586b` | číslo (`4.79`) · měsíce (`360`, ne roky) |
+| fixace · začátek a konec fixace | `Doba_fixac_172ca` · `platnost_f_e63c5` · `konec_fixa_65281` | roletka slovně (`5 let`) · datum · datum |
+| výše splátky | `vyse_splat_fff50` | číslo |
+| pojištění k úvěru | `Pojisteni_1b7ae` | `ANO` · `NE` · `ČSOB - Náš život` |
+| LTV | `LTV_eedee` | jen spočítané z řečených čísel: výše ÷ hodnota zástavy × 100, vzorec v náhledu |
+| datum představení nabídky | `Predstaven_47ad0` | datum (plní ho i workflow při fázi Nabídnuto, nepřepisovat) |
+| datum podpisu žádosti · vyjádření banky | `Datum_podp_02aa4` · `Vyjadreni__d8106` | datum |
+| typ provize | `Provize_dc7d2` | `Jednorázová` · `Postupná` · `Mimo BT (podnikatelský úvěr)` |
+| doporučení od tipaře | `source` | 156 |
+| očekávané dokončení | `scheduledEnd` | `yyyy-MM-dd` |
+| číslo smlouvy | `cislo_smlo_60eb1` | jen z dokumentu nebo e-mailu banky, z hovoru ne (čísla se komolí) |
+
+Fáze (`businessCasePhase`) jde vždy jen jako návrh (krok 13). Shrnutí, varianty a rozhodnutí patří do karty OP (`description`).
+V náhledu ukaž **prázdné → nové** a **staré → nové**, přepis existující hodnoty jen s potvrzením. Před zápisem ověř, že OP patří
+správnému klientovi (`company` = id klienta). Po zápisu `businessCase_get` a kontrola, že pole sedí.

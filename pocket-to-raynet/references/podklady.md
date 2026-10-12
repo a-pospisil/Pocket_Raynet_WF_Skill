@@ -25,12 +25,13 @@ U nového zájemce (lead) nic není — e-mail obsahuje celý seznam podle pří
 
 ## Kde zjistit, co už je
 
-Ověřeno 27. 9. 2026: doklady **nejsou** v Raynetu jako přílohy (`attachments: []` u klienta i OP) a **nejsou** ani na
-Google Drive — tam jsou jen exporty nahrávek z Pocketu. Přílohy e-mailů nástroje Raynetu nevracejí. Co od klienta přišlo,
-se proto zjišťuje z těchto zdrojů:
+Ověřeno 27. 9. 2026: doklady **nejsou** v Raynetu jako obecné přílohy (`attachments: []` u klienta i OP) a **nejsou** ani na
+Google Drive — tam jsou jen exporty nahrávek z Pocketu. Přílohy e-mailů nástroje Raynetu nevracejí. Část dokladů ale leží
+v **polích typu Soubor** na kartě klienta a OP (zjištěno 12. 10. 2026). Co od klienta přišlo, se proto zjišťuje z těchto zdrojů:
 
 | Zdroj | Jak | Co v něm je |
 |---|---|---|
+| **Pole typu Soubor** | `company_get(id)` a `businessCase_get(id)` → `customFields`, hodnota `{fileName, id, size}` | klient: `DPFO_posle_46c18`, `DPFO_predp_6db0e` (DPFO), `DPPO_posle_fd646`, `DPPO_predp_a7809`, `Vykaz_zisk_85c88`, `Vykaz_zisk_bbbbe`, `Ucetni_roz_6defa`, `Ucetni_roz_cdbc0` (s.r.o.), `Prehled_uv_6cdfe` (přehled úvěrů); OP: `Zadost_fc4dc` (žádost), `Hypotecni__f694a` (smlouva). Prázdné pole klíč nevrací. Název souboru ověř: do pole se občas nahraje jiný doklad nebo prázdné zástupné PDF, pak je položka „?“ |
 | **Karta OP** | `businessCase_get(id)` → `description` | řádek „Otevřené body / doptat"; u starších OP ruční poznámky pod „Původní poznámky" (dřív oddíl „PODKLADY OD KLIENTA" s řádkem „Chybí:") |
 | **E-maily od klienta** | `email_list(companyId=<id>, completedFrom=<začátek případu>)` → řádky, kde `from` je klient; `email_get(id)` jen u těch, které vypadají na podklady | text e-mailu — „v příloze posílám DP za rok 2025". U IMAP importů je `from` prázdné, pak rozhoduje předmět |
 | **Dřívější hovory a schůzky** | `solution` a `description` aktivit klienta | co bylo slíbeno, co domluveno |

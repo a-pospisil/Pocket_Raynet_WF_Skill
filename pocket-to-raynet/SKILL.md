@@ -15,7 +15,7 @@ compatibility: >-
   Vyžaduje MCP servery Hey Pocket (plán Pro) a Raynet CRM, a Python 3 pro skripty
   (jen standardní knihovna).
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   hermes:
     tags: [crm, raynet, pocket, hypoteky, email]
 ---
@@ -40,9 +40,10 @@ Platí vždy, bez výjimky. Zdůvodnění: `docs/NAVRH-ZAPISY.md`, kap. 4a.
 3. **Při nejistotě se zeptej** (klient, OP, aktivita k dokončení, rozdělení hovoru, posun fáze). Zápis přes MCP nejde smazat.
 4. **Nic nemaž a nic neruš sám od sebe.** Duplicitní nebo testovací telefonát zruš (`status="CANCELLED"`) jen na výslovný
    pokyn uživatele. Schůzky s pozvánkou nikdy: zrušení v Raynetu je smaže i v Google kalendáři.
-5. **Rodná čísla a čísla účtů jen z dokumentu, nikdy z hovoru.** Z přepisu ani ze shrnutí Pocketu je nepřebírej (čísla komolí).
-   Do karty klienta (`Rodne_cisl`, `bankAccount`) je zapiš jen z dokumentu, který máš k dispozici (DP, výpis, smlouva, doklad),
-   v náhledu s uvedením zdroje (Adam, 1. 10. 2026). V textu zápisu je nikdy neuváděj.
+5. **Rodná čísla, čísla účtů a údaje z dokladů jen z dokumentu, nikdy z hovoru.** Z přepisu ani ze shrnutí Pocketu je nepřebírej
+   (čísla komolí). Do karty klienta (`Rodne_cisl`, `bankAccount`, číslo OP, kdo OP vydal, platnost OP, rodné příjmení, státní
+   příslušnost) je zapiš jen z dokumentu, který máš k dispozici (DP, výpis, smlouva, doklad), v náhledu s uvedením zdroje
+   (Adam, 1. 10. 2026; doklady 12. 10. 2026). V textu zápisu je nikdy neuváděj.
 6. **Bez potvrzení se nic nezapíše.** Nejdřív náhled, pak zápis.
 7. **Zápis nikdy do Události.** Událost (`Event`) nemá v rozhraní Raynetu pole „Výsledek“: zápis uložený do jejího `solution`
    se na kartě klienta nezobrazí. Zápis patří jen do Schůzky (`Meeting`) nebo Telefonátu (`PhoneCall`). Naplánovaná Událost
@@ -120,10 +121,15 @@ ověř zvlášť (tvrdé pravidlo 1). U klienta vedeného v CRM dvakrát vrátí
 |---|---|
 | právě 1 zásah se dvěma shodnými znaky | pokračuj |
 | víc kandidátů nebo jen jeden znak | **zastav**, vypiš kandidáty (id, jméno, e-mail, vlastník), nech vybrat |
-| 0 zásahů | navrhni **lead** (`lead_create`: `topic`, `firstName`, `lastName`, `leadPerson=true`, kontakt, zdroj). Po potvrzení založ a zápis naváž na lead. Klienta (fyzickou osobu) přes MCP nezakládej. |
+| 0 zásahů | navrhni **lead** (`lead_create`: `topic`, `firstName`, `lastName`, `leadPerson=true`, kontakt, zdroj). Po potvrzení založ a zápis naváž na lead. Klienta (fyzickou osobu) přes MCP nezakládej. Výjimka jen na výslovný pokyn „založ klienta“: viz níže. |
 
 Když hovor zjevně navazuje na rozjednaný případ (zmiňuje OP, dřívější podklady, předchozí schůzku), 0 zásahů znamená spíš
 chybu párování než nového zájemce: zeptej se, lead nezakládej.
+
+**Založení klienta na výslovný pokyn.** `company_create` vytvoří vždy organizaci. Povinné a výchozí: `name` = „Jméno Příjmení“,
+`role="A_SUBSCRIBER"`, `state="A_POTENTIAL"`, `rating="C"`, `owner` = poradce, který hovor vedl. K tomu, co jistě zaznělo:
+kontakt a adresa (vždy s `addressName`), `contactSource`, tipař (`category`, jen výslovně jmenovaný), vlastní pole a Profil
+klienta (krok 11). V souhrnu uveď „v UI přepnout na fyzickou osobu, jméno a příjmení zvlášť“.
 
 **Klient není vždy ten, s kým se mluví.** Hovor s partnerem, rodičem nebo známým patří k tomu, kdo bude dlužníkem.
 Mluvčího navaž přes `participants`.
@@ -170,7 +176,8 @@ businessCase_list(companyId=<id>, status="B_ACTIVE")
 1 otevřený OP: naváž. Víc OP: vyber podle obsahu, a když to nejde jistě, zeptej se. Žádný: zápis bez OP a zmiň to.
 OP sám nezakládej. **Výjimka: běžící žádost u banky bez OP** (bankéř chce podklady, žádost je podaná). Tehdy v náhledu navrhni
 nový OP: název „banka/produkt – popis“, kategorie, fáze, banka v `producent`, výše (`totalAmount` + `vyse_uveru`; když ji neznáš,
-zeptej se). Založ ho až po potvrzení a zápis k němu naváž (Adam, 1. 10. 2026: „chybí zapsaný OP“).
+zeptej se), zdroj (`source`, v UI povinný) a další pole, která jistě zazněla (`references/sablony-zapisu.md`, „Pole OP z hovoru“).
+Založ ho až po potvrzení a zápis k němu naváž (Adam, 1. 10. 2026: „chybí zapsaný OP“).
 
 ⚠️ OP se jmenují podle banky a produktu, ne podle klienta, a případ z hovoru může být vedený na spolužadateli nebo manželce.
 Když z obsahu plyne případ, který mezi OP klienta není, **zeptej se**.
@@ -304,8 +311,10 @@ celý seznam: stávající účastníky s jejich `id` + vlastníka.
 
 Jen když se změnil stav případu (vždy u šablony L). `businessCase_get` → sestav kartu podle šablony → `businessCase_update(description=…)`.
 Ruční text, který v popisu napsal člověk, **zachovej** pod nadpisem „Původní poznámky“. „Klíčová rozhodnutí“ jen doplňuj.
-Pole OP (banka, výše, LTV…) neměň. Výši OP (`totalAmount`) jen na výslovný pokyn, např. „hodnota OP = 65 % z odhadu“
-(odhad bývá jen v PDF příloze e-mailu, kterou MCP nepřečte: zeptej se na částku).
+Pole OP (banka, výše, LTV…) bez pokynu neměň. Výši OP (`totalAmount`) jen na výslovný pokyn, např. „hodnota OP = 65 % z odhadu“
+(odhad bývá jen v PDF příloze e-mailu, kterou MCP nepřečte: zeptej se na částku). Když uživatel řekne „doplň i pole OP“, vyplň
+je podle `references/sablony-zapisu.md`, „Pole OP z hovoru“: jen co zaznělo, počítané hodnoty (LTV) se vzorcem, roletky přesným
+textem, v náhledu „prázdné → nové“ a „staré → nové“.
 
 ### 11. Doplň kartu klienta (maximum údajů)
 
@@ -313,11 +322,16 @@ Na kartu klienta patří **maximum toho, co z hovoru jistě plyne** a platí nap
 
 - **standardní pole:** e-mail a telefon, adresa bydliště, IČO a DIČ (OSVČ), plátce DPH, zdroj kontaktu, tipař (`category`,
   určuje dělení provize, proto jen prázdné a výslovně jmenovaný tipař, jinak se zeptej), sociální sítě;
-- **vlastní pole:** počet dětí, zaměstnavatel, pozice, nájmy v DP, čistý nájem;
+- **vlastní pole:** osobní (vzdělání, rodinný stav, zúžení SJM, počet dětí, hlavní banka), zaměstnání (čistý příjem, zaměstnavatel,
+  pozice, nástup, HPP/DPČ/DPP), výdaje (bydlení, domácnost, stávající úvěry po řádcích), nájmy (v DP, současný a budoucí čistý
+  nájem), podnikání (počátek, obor, svobodné povolání, paušál, paušální daň). Mapování „co zaznělo → klíč“ je v šabloně;
+  bankovní řádky BT kredit jen z výpočtu, pole typu soubor jen čti;
 - **Profil klienta v `notice`:** osoba a domácnost, vazby (spolužadatel, firma), příjmy, nemovitosti, závazky, konce fixací,
   cíle, servisní příležitosti, preferovaná komunikace. Ruční text zůstane pod „Původní poznámky“.
 
 Před zápisem `company_get`. Prázdné doplň, existující přepiš jen jistou hodnotou a změnu „staré → nové“ ukaž v náhledu.
+Do `customFields` posílej jen měněné klíče (`null` nebo prázdná hodnota pole smaže). Kontakt nebo adresu vždy s `addressName`
+(stávající, u prázdné „Sídlo klienta“), jinak update neprojde. Po zápisu `company_get` a kontrola, že pole sedí.
 RČ a číslo účtu jen z dokumentu (tvrdé pravidlo 5). Co MCP neumí (jméno a příjmení zvlášť, titul, datum narození, příznak fyzické osoby), uveď v souhrnu
 jako „doplnit v UI“. Pole, klíče a šablona profilu: `references/sablony-zapisu.md`, „Karta klienta“.
 
@@ -414,10 +428,11 @@ potvrzování někde zjednodušit; tvrdé pravidlo 6 tím neplatí o nic méně 
 
 Načti podle potřeby:
 
-- **`references/sablony-zapisu.md`**: šablony S / M / L, karta OP, bonita po bankách, bankéř, souhrnný úkol, příprava, vlastní pole klienta.
-  Otevři pokaždé před psaním textu.
-- **`references/raynet-reference.md`**: uživatelé, typy aktivit (Událost bez Výsledku), fáze OP, kategorie, povinná pole,
-  vlastní pole, pasti (completed, řešitel úkolu, Google kalendář).
+- **`references/sablony-zapisu.md`**: šablony S / M / L, karta OP, bonita po bankách, bankéř, souhrnný úkol, příprava,
+  karta klienta s mapováním „co zaznělo → vlastní pole“, pole OP na pokyn. Otevři pokaždé před psaním textu.
+- **`references/raynet-reference.md`**: uživatelé, typy aktivit (Událost bez Výsledku), fáze OP, standardní pole klienta a OP,
+  všechny klíče vlastních polí s přesnými hodnotami roletek a formáty, soubory a přílohy, pasti (completed, řešitel úkolu,
+  Google kalendář, `addressName`, mazání prázdnou hodnotou).
 - **`references/pocket-reference.md`**: tvary odpovědí Pocketu, formáty `recordingId`, limity action items.
 - **`references/html-formatting.md`**: co Raynet v HTML polích uloží (tabulky a `<pre>` ne).
 - **`references/email-style.md`**: jak Adam píše e-maily, včetně pravidel naučených z jeho úprav. Otevři před návrhem e-mailu.

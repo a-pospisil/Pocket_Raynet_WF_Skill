@@ -46,7 +46,7 @@ Tyhle hranice nejsou opatrnost, ale technická omezení MCP ověřená auditem:
 
 | | Proč |
 |---|---|
-| **Nezaloží klienta** | `company_create` umí vytvořit jen organizaci, ne fyzickou osobu. Neznámý volající se založí jako **lead**, klienta zakládá člověk v UI. |
+| **Nezaloží klienta sám** | `company_create` umí vytvořit jen organizaci, ne fyzickou osobu. Neznámý volající se založí jako **lead**. Klienta založí jen na výslovný pokyn (jako organizaci, typ se přepne v UI). |
 | **Nezaloží e-mail ani dopis** | MCP je umí jen číst. Návrh e-mailu klientovi je v popisu souhrnného úkolu, na pokyn v chatu nebo jako koncept do pošty (`.eml`). |
 | **Neodešle e-mail** | Jen připraví návrh. Odeslání je vždy na člověku. |
 | **Nepřepíše záznam beze stopy** | Každý přepis uloží do audit logu původní stav — přes MCP jiná cesta zpět není. |
@@ -54,7 +54,7 @@ Tyhle hranice nejsou opatrnost, ale technická omezení MCP ověřená auditem:
 | **Nezaloží duplicitu k naplánované aktivitě** | Naplánovaný hovor nebo schůzku z téhož dne, které proběhly v jiný čas, dokončí. Aktivity z jiných dní nechá být. |
 | **Nezruší schůzku** | Zrušení v Raynetu ji smaže i v Google kalendáři. Duplicitní nebo testovací telefonát zruší jen na výslovný pokyn. |
 | **Nezapíše zápis do Události** | Událost nemá v UI pole „Výsledek“, zápis by nebyl vidět. Navrhne převod na Schůzku v UI, nebo na pokyn založí novou Schůzku. |
-| **Nezmění pole OP** | Navrhne jen posun fáze. Výši OP nastaví jen na výslovný pokyn. |
+| **Nezmění pole OP bez pokynu** | Navrhne jen posun fáze. Výši a další pole OP vyplní jen na výslovný pokyn. |
 | **Nepřejmenuje mluvčí v Pocketu** | MCP Pocketu to neumí. Skill napíše, koho přejmenovat, a opraví to v zápisu podle přepisu. |
 | **Nenahraje přílohu** | Jen odkaz URL. Pocket audio navíc expiruje po hodině. |
 | **Nezapíše rodné číslo ani číslo účtu z hovoru** | Redakce probíhá automaticky v převodním skriptu. Do karty klienta jen z dokumentu. |
@@ -150,3 +150,9 @@ a že `status=COMPLETED` při založení nastaví čas dokončení na okamžik z
 12. 10. 2026 proběhl **první ostrý zápis ke klientovi** (úvodní schůzka). Odhalil, že naplánovaná schůzka z kalendáře byla
 v Raynetu typu **Událost**, která nemá v UI pole „Výsledek“, takže zápis nebyl na kartě klienta vidět. Doplněno tvrdé pravidlo 7
 a větev A2 (zápis jen do Schůzky nebo Telefonátu), režim „doslovně Pocket“ s kontrolou `--check` a e-mail do chatu na pokyn.
+
+12. 10. 2026 byl doplněn **úplný soupis polí Raynetu** podle Adamova manuálu (pole přečtená v Nastavení evidence, klíče
+ověřené zápisem a čtením přes MCP) a kontroly 119 reálných OP: standardní pole klienta a OP, klíče všech vlastních polí
+klienta i OP, přesné hodnoty roletek a formáty (`references/raynet-reference.md`). Skill podle toho plní víc vlastních
+polí klienta (mapování „co zaznělo → klíč“ v šabloně karty klienta), čte pole typu Soubor jako přehled dodaných dokladů
+a na výslovný pokyn vyplní i pole OP.

@@ -270,7 +270,7 @@ Do `customFields` posílej **jen klíče, které měníš** (`null` nebo prázdn
 | zúžené SJM | `Zuzeni_SJ_f0b36` | `Ano` / `Ne` |
 | počet vyživovaných dětí | `Pocet_deti_cf874` | číslo |
 | banka hlavního účtu | `hlavni_bez_5fef9` | `ČSOB` · `KB` · `ČS` · `RB` · `Fio` · `Airbank` · `mBank` |
-| čistý měsíční příjem ze zaměstnání | `mesicni_pr_0a298` | číslo, např. `65000` |
+| čistý měsíční příjem ze závislé činnosti | `mesicni_pr_0a298` | číslo, např. `65000`. **Vždy čistý** (Adam, 12. 10. 2026): hrubý sem nepatří ani přepočtený, zazní-li jen hrubý, čistý do „Doptat“ |
 | zaměstnavatel · pozice | `zamestnava_ffa65` · `pracovni_p_f7e4d` | text |
 | nástup k zaměstnavateli | `nastup_fbbb1` | datum `"2019-03-01"` |
 | druh pracovního poměru | `Druh_fcd16` | `HPP` · `DPČ` · `DPP` |

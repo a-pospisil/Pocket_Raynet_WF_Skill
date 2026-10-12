@@ -337,7 +337,7 @@ soubor, MCP ho nevyplní; *ne* = nevyplňovat.
 
 | Popisek | Typ | Klíč | Skill |
 |---|---|---|---|
-| měsíční příjem | číslo | `mesicni_pr_0a298` | hovor (čistý měsíční) |
+| měsíční příjem | číslo | `mesicni_pr_0a298` | hovor; **vždy čistý** měsíční příjem ze závislé činnosti (Adam, 12. 10. 2026). Zazní-li jen hrubý, pole nevyplňuj a čistý dej do Doptat |
 | zaměstnavatel | text | `zamestnava_ffa65` | hovor |
 | pracovní pozice | text | `pracovni_p_f7e4d` | hovor |
 | nástup | datum | `nastup_fbbb1` | hovor (měsíc a rok → 1. den měsíce; jen rok → do profilu, pole prázdné) |

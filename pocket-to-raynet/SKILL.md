@@ -29,7 +29,7 @@ Platí vždy, bez výjimky. Zdůvodnění: `docs/NAVRH-ZAPISY.md`, kap. 4a.
    nebo když ho uživatel jmenuje. Jinak se zeptej.
 2. **Naplánovanou aktivitu z téhož dne dokonči, nezakládej novou.** Když u klienta visí telefonát, schůzka nebo událost
    naplánovaná **na stejný den**, kdy hovor proběhl, a podle Pocketu proběhla v jiný čas (později i dřív), označ jako hotovou
-   tu původní (krok 5, větev A). Aktivitu naplánovanou na jiný den ani nenaplánovanou nedokončuj (Adam, 1. 10. 2026).
+   tu původní (krok 5, větev A; Událost větev A2). Aktivitu naplánovanou na jiný den ani nenaplánovanou nedokončuj (Adam, 1. 10. 2026).
 3. **Při nejistotě se zeptej** (klient, OP, aktivita k dokončení, rozdělení hovoru, posun fáze). Zápis přes MCP nejde smazat.
 4. **Nic nemaž a nic neruš sám od sebe.** Duplicitní nebo testovací telefonát zruš (`status="CANCELLED"`) jen na výslovný
    pokyn uživatele. Schůzky s pozvánkou nikdy: zrušení v Raynetu je smaže i v Google kalendáři.
@@ -37,6 +37,9 @@ Platí vždy, bez výjimky. Zdůvodnění: `docs/NAVRH-ZAPISY.md`, kap. 4a.
    Do karty klienta (`Rodne_cisl`, `bankAccount`) je zapiš jen z dokumentu, který máš k dispozici (DP, výpis, smlouva, doklad),
    v náhledu s uvedením zdroje (Adam, 1. 10. 2026). V textu zápisu je nikdy neuváděj.
 6. **Bez potvrzení se nic nezapíše.** Nejdřív náhled, pak zápis.
+7. **Zápis nikdy do Události.** Událost (`Event`) nemá v rozhraní Raynetu pole „Výsledek“: zápis uložený do jejího `solution`
+   se na kartě klienta nezobrazí. Zápis patří jen do Schůzky (`Meeting`) nebo Telefonátu (`PhoneCall`). Naplánovaná Událost
+   se řeší větví A2 v kroku 9 (Adam, 12. 10. 2026).
 
 ## Postup
 
@@ -121,11 +124,17 @@ od konce nahrávky, nebo vznikla týž den a obsahem odpovídá. Zapsané tiše 
 a `description`. Okno `scheduledFrom`/`scheduledTill` v `activity_list` funguje jako překryv, proto u každého kandidáta ověř,
 že jeho vlastní `scheduledFrom` je opravdu ve dni hovoru.
 
+U každého kandidáta čti **typ** (`_entityName`): `Meeting` a `PhoneCall` jdou do větve A, `Event` do větve A2 (tvrdé pravidlo 7).
+
 | Situace | Co udělat |
 |---|---|
-| 1 otevřená aktivita téhož dne, téma sedí | větev A: dokončit ji |
+| 1 otevřená schůzka nebo telefonát téhož dne, téma sedí | větev A: dokončit ji |
+| 1 otevřená **událost** téhož dne, téma sedí | větev A2: do Události nezapisovat, v náhledu navrhnout převod na Schůzku |
 | víc kandidátů téhož dne nebo nejasné téma | **zeptej se**, kterou dokončit |
 | žádná aktivita téhož dne | větev B: nová realizovaná aktivita |
+
+Naplánované schůzky z kalendáře bývají v Raynetu typu Událost (12. 10. 2026 všechny dnešní položky kalendáře; nejspíš je zakládá
+synchronizace s Google kalendářem, `[k ověření]`). Větev A2 proto čekej často.
 
 Otevřené aktivity z **jiných dní** a nenaplánované (`NEW`) nech beze změny. Uveď je jen v náhledu jako „visí otevřené:
 <typ, název, datum>“, ať je uživatel může vyřídit ručně.
@@ -163,6 +172,14 @@ a plány špatné osobě. Případy z 22. 9.–1. 10. 2026: „klient odjíždí
    ať to uživatel opraví v appce.
 5. Doporučení pro poradce: na začátku nahrávky nadiktovat jméno klienta a téma. Párování je pak jisté.
 
+**Režim „doslovně Pocket“ (jen na výslovný pokyn).** Když uživatel řekne „přepiš zápis přesně z Pocketu, nic neměň“
+(Adam, 12. 10. 2026), do `solution` jde AI shrnutí Pocketu (`summary.markdown`) **beze změny textu**, bez šablony S / M / L,
+bez řádku „Chyby Pocketu“ a bez patičky. Jen převod Markdown → HTML skriptem
+`scripts/md_to_raynet_html.py --check` (nadpisy tučně, odrážky jako seznam, vnořené odrážky uvnitř `<li>`; RČ a čísla účtů
+skript dál rediguje). Přepínač `--check` ověří, že text bez značek je shodný s originálem; jinak se nezapisuje. Rozpory shrnutí
+s přepisem napiš jen do chatu, ne do zápisu. Výchozí formát zůstává šablona podle `references/sablony-zapisu.md`, dokud
+uživatel nerozhodne jinak.
+
 Do textu patří i interní věci: další postup, rozdělení práce, ladění s kolegou. Zápis je interní, klient vidí jen návrh e-mailu.
 **Rady k fakturaci nepiš** (jak má fakturace vypadat, komu a kolika odběratelům fakturovat). Fakturaci uveď jen tak, jak ji
 klient sám popsal (Adam, 1. 10. 2026).
@@ -196,6 +213,13 @@ Text:       <prvních 5 řádků zápisu>
 ```
 
 Do náhledu patří i řádky `Účastníci:` (vlastník klienta, když není zapisující) a `Chyby Pocketu:` (krok 7).
+U naplánované Události (větev A2) místo řádku `Aktivita:`:
+
+```
+Aktivita:   UDÁLOST 99001 „Jan Ukázkový“ (21. 9. 10:00) – do Události zápis nejde (nemá Výsledek).
+            Volba a) převeď ji v Raynetu na Schůzku (detail aktivity → změna typu), pak zapíšu do Schůzky   ← výchozí
+            Volba b) založím novou Schůzku se zápisem, Událost nechám beze změny k ručnímu smazání
+```
 
 U dávky souhrn a jedna otázka na celek, ale položka s nejistým klientem, OP nebo aktivitou se potvrzuje zvlášť. Dávku nad
 ~5 hovorů dej jako stránku k revizi (HTML nebo artefakt), kde uživatel u každého hovoru zvolí Zapsat / Doptat / Nezapisovat
@@ -206,7 +230,7 @@ a texty upraví přímo v náhledu. Zapisuj pak jen položky „Zapsat“ s upra
 Zápisové nástroje Raynetu běží na dva kroky: první volání vrátí náhled a `confirmToken`, druhé se stejnými argumenty plus tokenem
 zápis provede. Token platí 60 s a nikdy se nevymýšlí.
 
-**Větev A: dokončení naplánované aktivity** (`phonecall_update` / `meeting_update` / `event_update` podle typu):
+**Větev A: dokončení naplánované aktivity** (`phonecall_update` / `meeting_update` podle typu; `event_update` nikdy, viz A2):
 
 ```
 <typ>_get(id)                                   → současný description, tags, participants
@@ -220,6 +244,20 @@ zápis provede. Token platí 60 s a nikdy se nevymýšlí.
 
 `description` (příprava, pozvánka, odkaz na Meet) **nech být**. Vazbu na klienta a OP neposílej, už tam je.
 `participants` neposílej, pokud je neměníš (update přepíše celý seznam).
+
+`status=COMPLETED` nastaví `completed` na `scheduledTill`. Když posíláš skutečný konec ve `scheduledTill`, sedí; jinak hned potom
+`<typ>_update(id, completed=<konec>)` bez `status`. Po zápisu výsledek ověř přes `activity_list(companyId=<id>)`.
+
+**Větev A2: naplánovaná Událost** (tvrdé pravidlo 7). Typ aktivity přes MCP změnit nejde. Do Události **nic nezapisuj**
+a v náhledu nabídni (formát v kroku 8):
+
+- **a) převod v UI (výchozí):** uživatel v Raynetu přehodí Událost na Schůzku. Převod vytvoří **novou Schůzku s novým id**
+  (název, čas, účastníci i případný výsledek se přenesou) a Událost zanikne; `event_get` na staré id pak vrací
+  **502 Bad Gateway**, ne „nenalezeno“. Schůzku proto znovu dohledej přes `activity_list(companyId=<id>, entityType="meeting")`
+  v okně dne hovoru a pokračuj větví A (`meeting_update`).
+- **b) nová Schůzka:** když uživatel převod dělat nechce, `meeting_create` (stejný název a čas, `company`, klient v `participants`,
+  `status="COMPLETED"`, `solution`, štítek `AI zápis`), pak `meeting_update(id, completed=<konec>)` bez `status`. Událost
+  **neruš** (zrušení ji smaže i v Google kalendáři), jen ji v souhrnu uveď k ručnímu smazání.
 
 **Větev B: nová realizovaná aktivita** (telefonát; u osobní nebo online schůzky `meeting_create`):
 
@@ -271,6 +309,8 @@ Adam ponechal navržený úkol jen u 1 ze 7 hovorů.
 - Řešitel jiný než zapisující: po založení `task_get` a přepsat osobu u druhého účastníka v `participants`
   (`resolverPerson` nefunguje). Výsledek ověř přes `task_get`.
 - Návrh e-mailu klientovi patří do popisu úkolu po úvodní schůzce, po nabídce a vždy, když v hovoru zazní „pošlu vám…“.
+  Když uživatel chce e-mail „sem do chatu“, dej ho do chatu ke zkopírování (Adam, 12. 10. 2026). Co se vyřešilo na místě
+  (např. faktura zaplacená při schůzce), do e-mailu nepiš.
 - Action items z Pocketu (`search_pocket_actionitems`, filtr na `recordingId`) slouč do checklistu. Po zápisu je v Pocketu uzavři
   (`update_pocket_actionitem(status="COMPLETED")`; priorita se při zápisu píše velkými písmeny).
 
@@ -289,7 +329,9 @@ Tabulka: co bylo zapsáno nebo dokončeno (id), karta OP, karta klienta, úkol, 
 
 Hermes ráno, nebo pokyn „připrav dnešní schůzky":
 
-1. `activity_list(ownerId=<krok 0>, scheduledFrom=<dnes 00:00>, scheduledTill=<dnes 23:59>)`, jen schůzky a telefonáty s klientem.
+1. `activity_list(ownerId=<krok 0>, scheduledFrom=<dnes 00:00>, scheduledTill=<dnes 23:59>)`: schůzky, telefonáty
+   **i události** s klientem. U Události v náhledu doporuč převod na Schůzku ještě před schůzkou (tvrdé pravidlo 7), ať jde
+   zápis po schůzce rovnou do ní.
 2. U každé: karta OP (otevřené body, rozpětí bonity), poslední 2–3 aktivity, otevřené úkoly.
 3. **Připoj** na konec `description` blok „PŘÍPRAVA (AI, <datum>)“ podle šablony (Doptat · Ověřit · Mít po ruce). Původní text,
    pozvánku a odkaz na Meet nech beze změny. Když blok s dnešním datem už existuje, nepřidávej ho.
@@ -305,6 +347,8 @@ Hermes ráno, nebo pokyn „připrav dnešní schůzky":
 | Případ z hovoru není mezi OP klienta | zeptej se, nesahej po jiném OP |
 | Pocket prohodil mluvčí | oprav podle obsahu, nejisté označ `[k ověření]`; přejmenování mluvčích nech na uživateli (MCP to neumí) |
 | Shrnutí Pocketu tvrdí něco jiného než přepis | platí přepis; rozdíl uveď v náhledu („Chyby Pocketu“) |
+| Naplánovaná aktivita je Událost | do Události nezapisovat, větev A2 (krok 9) |
+| `*_get` na známé id vrací 502 Bad Gateway | aktivita mohla být převedena (Událost → Schůzka) nebo smazána: dohledej ji přes `activity_list(companyId=…)`, id neopakuj |
 | Backend vrátí chybu u id | nezkoušej jiné id naslepo, chyba vyjmenuje platná |
 | `confirmToken` vypršel | zopakuj náhled, získej nový token |
 | Raynet nedostupný | zastav celou dávku, nic nezapisuj napůl |
@@ -317,8 +361,8 @@ Načti podle potřeby:
 
 - **`references/sablony-zapisu.md`**: šablony S / M / L, karta OP, bonita po bankách, bankéř, souhrnný úkol, příprava, vlastní pole klienta.
   Otevři pokaždé před psaním textu.
-- **`references/raynet-reference.md`**: uživatelé, fáze OP, kategorie, povinná pole, vlastní pole, pasti (completed, řešitel úkolu,
-  Google kalendář).
+- **`references/raynet-reference.md`**: uživatelé, typy aktivit (Událost bez Výsledku), fáze OP, kategorie, povinná pole,
+  vlastní pole, pasti (completed, řešitel úkolu, Google kalendář).
 - **`references/pocket-reference.md`**: tvary odpovědí Pocketu, formáty `recordingId`, limity action items.
 - **`references/html-formatting.md`**: co Raynet v HTML polích uloží (tabulky a `<pre>` ne).
 - **`docs/NAVRH-ZAPISY.md`** (v repozitáři): rozhodnutí Adama a jejich důvody. **`docs/RAYNET-OPTIMALIZACE.md`**: doporučené

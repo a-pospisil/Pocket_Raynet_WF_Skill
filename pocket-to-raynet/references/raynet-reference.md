@@ -6,6 +6,7 @@ Plný audit: `docs/AUDIT-POCKET-RAYNET.md` v repozitáři.
 ## Obsah
 
 - [Konstanty](#konstanty)
+- [Typy aktivit](#typy-aktivit)
 - [Stavy aktivit](#stavy-aktivit)
 - [Fáze obchodního případu](#fáze-obchodního-případu)
 - [Kategorie aktivit](#kategorie-aktivit)
@@ -31,6 +32,27 @@ Plný audit: `docs/AUDIT-POCKET-RAYNET.md` v repozitáři.
 
 Formát ISO bez milisekund je odmítnut. `2026-01-01T12:00:00+01:00` neprojde,
 `2026-01-01T12:00:00.000+01:00` ano.
+
+## Typy aktivit
+
+Ověřeno 12. 10. 2026 prvním ostrým zápisem ke klientovi.
+
+| Typ (`_entityName`) | MCP | Pole „Výsledek“ (`solution`) v UI | Pro AI zápis |
+|---|---|---|---|
+| Schůzka (`Meeting`) | `meeting_*` | ano | **ano** (osobní nebo online schůzka) |
+| Telefonát (`PhoneCall`) | `phonecall_*` | ano | **ano** (hovor) |
+| Událost (`Event`) | `event_*` | **ne** | **ne**: zápis v `solution` se na kartě klienta nezobrazí, časová osa ukáže jen název |
+| Úkol (`Task`) | `task_*` | – | jen souhrnný úkol (checklist + návrh e-mailu v `description`) |
+
+- **Typ přes MCP změnit nejde** (žádný nástroj). Převod dělá člověk v UI v detailu aktivity.
+- **Převod Událost → Schůzka v UI vytvoří novou Schůzku s novým id.** Přenese název, čas, klienta, účastníky, štítky
+  i `solution`, původní Událost zanikne. `event_get` na staré id pak vrací **502 Bad Gateway** (ne „nenalezeno“) a Událost
+  zmizí i z `activity_list`. Novou Schůzku najdeš přes `activity_list(companyId=…, entityType="meeting")`.
+- **Naplánované schůzky z kalendáře bývají Události.** 12. 10. 2026 byly všechny položky dne v kalendáři Adama typu `Event`,
+  nejspíš je zakládá obousměrná synchronizace s Google kalendářem `[k ověření]`. Postup skillu: `SKILL.md`, tvrdé pravidlo 7
+  a větev A2.
+- K ověření: dá se v nastavení synchronizace Google kalendáře zvolit import jako Schůzka? Umí REST API změnit typ aktivity?
+  Zachová převod v UI vazbu na událost v Google kalendáři?
 
 ## Stavy aktivit
 
@@ -191,6 +213,11 @@ nepošleš, je smazán. Před každou změnou načti `phonecall_get` a stávají
 (`company_get`) nebo string (`company_list`) — počítej s obojím. `null` maže vše,
 prázdný string ne.
 
+**Prázdný string nemaže ani text.** `event_update` / `meeting_update` se `solution=""` pole nevyprázdní, náhled změnu
+vůbec neukáže (ověřeno 12. 10. 2026).
+
+**Událost nezobrazuje Výsledek.** Zápis do `solution` Události je v UI neviditelný. Viz [Typy aktivit](#typy-aktivit).
+
 **`phonecall_update` neumí změnit `owner`** — backend to pole na update ignoruje.
 
 **`status=COMPLETED` při create nastaví `completed` na čas zápisu**, ne na `scheduledTill` (ověřeno 1. 10. 2026, telefonát 37590:
@@ -273,6 +300,7 @@ Tagy se reálně používají: 450 záznamů nese `Broker Trust`.
   (`_entityName: "Email"`), ale `email_*` ani `letter_*` nástroje neexistují
   a `entityType` připouští jen `task`, `meeting`, `event`, `phonecall`.
 - ❌ **Generický `activity_get`** — detail se čte podle subtypu.
+- ❌ **Změnit typ aktivity** (Událost → Schůzka) — jen ručně v UI, převod vytvoří nový záznam s novým id.
 - ❌ **Nahrát binární přílohu** — jen `attachmentLink` (URL) nebo `attachmentFolderId`.
 - ❌ **Smazat cokoli** — žádný `delete` nástroj. Zápis je nevratný.
 - ❌ **Nastavit `businessCase.status` přímo** — jen přes `businessCasePhase`.

@@ -51,6 +51,7 @@ Tyhle hranice nejsou opatrnost, ale technická omezení MCP ověřená auditem:
 | **Nezapíše pod nejistého klienta** | Klient musí sedět ve dvou znacích, jinak se ptá. |
 | **Nezaloží duplicitu k naplánované aktivitě** | Naplánovaný hovor nebo schůzku z téhož dne, které proběhly v jiný čas, dokončí. Aktivity z jiných dní nechá být. |
 | **Nezruší schůzku** | Zrušení v Raynetu ji smaže i v Google kalendáři. Duplicitní nebo testovací telefonát zruší jen na výslovný pokyn. |
+| **Nezapíše zápis do Události** | Událost nemá v UI pole „Výsledek“, zápis by nebyl vidět. Navrhne převod na Schůzku v UI, nebo na pokyn založí novou Schůzku. |
 | **Nezmění pole OP** | Navrhne jen posun fáze. Výši OP nastaví jen na výslovný pokyn. |
 | **Nepřejmenuje mluvčí v Pocketu** | MCP Pocketu to neumí. Skill napíše, koho přejmenovat, a opraví to v zápisu podle přepisu. |
 | **Nenahraje přílohu** | Jen odkaz URL. Pocket audio navíc expiruje po hodině. |
@@ -99,6 +100,9 @@ a rediguje citlivé údaje.
 ```bash
 python3 pocket-to-raynet/scripts/md_to_raynet_html.py summary.md \
         --recording-id 890c636f-1555-4714-aa95-3f65618db135
+
+# režim „doslovně Pocket“: ověří, že převod nezměnil text (při rozdílu návratový kód 1)
+python3 pocket-to-raynet/scripts/md_to_raynet_html.py summary.md --check
 ```
 
 Bez závislostí, jen standardní knihovna Pythonu 3.
@@ -113,4 +117,7 @@ kde odhalil a nechal opravit šest chyb — mimo jiné dvě různé díry v dete
 
 1. 10. 2026 proběhl zkušební zápis na testovacího klienta. Ověřil, že Raynet odstraní `<table>` i `<pre>`
 a že `status=COMPLETED` při založení nastaví čas dokončení na okamžik zápisu (skill ho hned opraví).
-**Ostrý zápis ke klientovi zatím neproběhl.**
+
+12. 10. 2026 proběhl **první ostrý zápis ke klientovi** (úvodní schůzka). Odhalil, že naplánovaná schůzka z kalendáře byla
+v Raynetu typu **Událost**, která nemá v UI pole „Výsledek“, takže zápis nebyl na kartě klienta vidět. Doplněno tvrdé pravidlo 7
+a větev A2 (zápis jen do Schůzky nebo Telefonátu), režim „doslovně Pocket“ s kontrolou `--check` a e-mail do chatu na pokyn.

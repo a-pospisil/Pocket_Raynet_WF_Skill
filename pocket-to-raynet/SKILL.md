@@ -15,7 +15,7 @@ compatibility: >-
   Vyžaduje MCP servery Hey Pocket (plán Pro) a Raynet CRM, a Python 3 pro skripty
   (jen standardní knihovna).
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   hermes:
     tags: [crm, raynet, pocket, hypoteky, email]
 ---
@@ -40,21 +40,26 @@ Platí vždy, bez výjimky. Zdůvodnění: `docs/NAVRH-ZAPISY.md`, kap. 4a.
 3. **Při nejistotě se zeptej** (klient, OP, aktivita k dokončení, rozdělení hovoru, posun fáze). Zápis přes MCP nejde smazat.
 4. **Nic nemaž a nic neruš sám od sebe.** Duplicitní nebo testovací telefonát zruš (`status="CANCELLED"`) jen na výslovný
    pokyn uživatele. Schůzky s pozvánkou nikdy: zrušení v Raynetu je smaže i v Google kalendáři.
-5. **Rodná čísla a čísla účtů jen z dokumentu, nikdy z hovoru.** Z přepisu ani ze shrnutí Pocketu je nepřebírej (čísla komolí).
-   Do karty klienta (`Rodne_cisl`, `bankAccount`) je zapiš jen z dokumentu, který máš k dispozici (DP, výpis, smlouva, doklad),
-   v náhledu s uvedením zdroje (Adam, 1. 10. 2026). V textu zápisu je nikdy neuváděj.
+5. **Rodná čísla, čísla účtů a údaje z dokladů jen z dokumentu, nikdy z hovoru.** Z přepisu ani ze shrnutí Pocketu je nepřebírej
+   (čísla komolí). Do karty klienta (`Rodne_cisl`, `bankAccount`, číslo OP, kdo OP vydal, platnost OP, rodné příjmení, státní
+   příslušnost) je zapiš jen z dokumentu, který máš k dispozici (DP, výpis, smlouva, doklad), v náhledu s uvedením zdroje
+   (Adam, 1. 10. 2026; doklady 12. 10. 2026). V textu zápisu je nikdy neuváděj.
 6. **Bez potvrzení se nic nezapíše.** Nejdřív náhled, pak zápis.
 7. **Zápis nikdy do Události.** Událost (`Event`) nemá v rozhraní Raynetu pole „Výsledek“: zápis uložený do jejího `solution`
    se na kartě klienta nezobrazí. Zápis patří jen do Schůzky (`Meeting`) nebo Telefonátu (`PhoneCall`). Naplánovaná Událost
    se řeší větví A2 v kroku 9 (Adam, 12. 10. 2026).
+8. **Tykání a vykání striktně.** Každá zpráva pro člověka (e-mail, SMS, WhatsApp) je celá v registru, který pisatel
+   s příjemcem používá: V1 vykání + příjmení, V2 vykání + křestní jméno, T tykání. Tykání je vzájemné: tyká-li příjemce
+   pisateli, pisatel mu tyká také. Registr se bere z pokynu, z karty v Raynetu, z posledních e-mailů mezi nimi (oběma směry)
+   nebo z jejich vzájemné řeči v přepisu (ne z tykání třetí osobě); bez důkazu vždy V1. Ty/Ti/Tvůj s velkým T. Návrh se před ukázáním kontroluje skriptem
+   `scripts/check_tykani.py` a s nálezem se neukazuje (Adam, 12. 10. 2026). Postup: `references/email-style.md`, „Tykání a vykání“.
 
 ## Postup
 
 ### 0. Zjisti, kdo zapisuje
 
 ```
-user_info()                          → username (e-mail přihlášeného uživatele)
-person_list(email=<username>)        → id = owner pro všechny zápisy
+user_info()                          → personId = owner pro všechny zápisy (ověřeno 12. 10. 2026)
 ```
 
 Vlastník se nikdy nezadává napevno. Každý poradce zapisuje sám za sebe (Adam = 2, ostatní viz `references/raynet-reference.md`).
@@ -120,10 +125,15 @@ ověř zvlášť (tvrdé pravidlo 1). U klienta vedeného v CRM dvakrát vrátí
 |---|---|
 | právě 1 zásah se dvěma shodnými znaky | pokračuj |
 | víc kandidátů nebo jen jeden znak | **zastav**, vypiš kandidáty (id, jméno, e-mail, vlastník), nech vybrat |
-| 0 zásahů | navrhni **lead** (`lead_create`: `topic`, `firstName`, `lastName`, `leadPerson=true`, kontakt, zdroj). Po potvrzení založ a zápis naváž na lead. Klienta (fyzickou osobu) přes MCP nezakládej. |
+| 0 zásahů | navrhni **lead** (`lead_create`: `topic`, `firstName`, `lastName`, `leadPerson=true`, kontakt, zdroj). Po potvrzení založ a zápis naváž na lead. Klienta (fyzickou osobu) přes MCP nezakládej. Výjimka jen na výslovný pokyn „založ klienta“: viz níže. |
 
 Když hovor zjevně navazuje na rozjednaný případ (zmiňuje OP, dřívější podklady, předchozí schůzku), 0 zásahů znamená spíš
 chybu párování než nového zájemce: zeptej se, lead nezakládej.
+
+**Založení klienta na výslovný pokyn.** `company_create` vytvoří vždy organizaci. Povinné a výchozí: `name` = „Jméno Příjmení“,
+`role="A_SUBSCRIBER"`, `state="A_POTENTIAL"`, `rating="C"`, `owner` = poradce, který hovor vedl. K tomu, co jistě zaznělo:
+kontakt a adresa (u založení vždy s `addressName`), `contactSource`, tipař (`category`, jen výslovně jmenovaný), vlastní pole a Profil
+klienta (krok 11). V souhrnu uveď „v UI přepnout na fyzickou osobu, jméno a příjmení zvlášť“.
 
 **Klient není vždy ten, s kým se mluví.** Hovor s partnerem, rodičem nebo známým patří k tomu, kdo bude dlužníkem.
 Mluvčího navaž přes `participants`.
@@ -167,13 +177,23 @@ Otevřené aktivity z **jiných dní** a nenaplánované (`NEW`) nech beze změn
 businessCase_list(companyId=<id>, status="B_ACTIVE")
 ```
 
-1 otevřený OP: naváž. Víc OP: vyber podle obsahu, a když to nejde jistě, zeptej se. Žádný: zápis bez OP a zmiň to.
-OP sám nezakládej. **Výjimka: běžící žádost u banky bez OP** (bankéř chce podklady, žádost je podaná). Tehdy v náhledu navrhni
-nový OP: název „banka/produkt – popis“, kategorie, fáze, banka v `producent`, výše (`totalAmount` + `vyse_uveru`; když ji neznáš,
-zeptej se). Založ ho až po potvrzení a zápis k němu naváž (Adam, 1. 10. 2026: „chybí zapsaný OP“).
+1 otevřený OP: naváž. Víc OP: vyber podle obsahu, a když to nejde jistě, zeptej se. Žádný a hovor žádný případ neřeší: zápis bez OP.
+
+**Když hovor evidentně řeší konkrétní případ a klient pro něj nemá otevřený OP, navrhni založení OP** (Adam, 12. 10. 2026:
+„pokud je evidentní, že se rovnou řeší OP, pak zakládej“; rozšiřuje pravidlo z 1. 10. o běžící žádosti). Evidentní = konkrétní
+úvěrový záměr a k tomu aspoň dvě věci z: banka nebo produkt, částka, nemovitost nebo účel, termín, nabídka, žádost nebo podklady,
+další krok poradce. Neevidentní: obecná konzultace bez záměru, servisní hovor (fixace končí za rok), „možná někdy“. Pak OP nezakládej
+a v souhrnu napiš „případ zatím bez OP“.
+
+Návrh OP v náhledu: název „banka/produkt – popis“, kategorie, fáze (10 Identifikace požadavku; 1 Nabídnuto, když nabídka odešla;
+2 Podaná žádost, když je žádost podaná), banka v `producent`, výše (`totalAmount` + `vyse_uveru`; když ji neznáš, zeptej se),
+zdroj (`source`, v UI povinný) a další pole, která jistě zazněla (`references/sablony-zapisu.md`, „Pole OP z hovoru“). Založ ho až
+po potvrzení a zápis k němu naváž. Volající, který je jen lead, OP mít nemůže (OP potřebuje klienta): zápis jde k leadu a OP navrhni
+až po převodu leadu na klienta v UI. Založení OP spustí automatiku se dvěma úkoly (`references/raynet-reference.md`), ty do checklistu
+nepřebírej.
 
 ⚠️ OP se jmenují podle banky a produktu, ne podle klienta, a případ z hovoru může být vedený na spolužadateli nebo manželce.
-Když z obsahu plyne případ, který mezi OP klienta není, **zeptej se**.
+Když z obsahu plyne případ, který mezi OP klienta není, nesahej po jiném OP: u evidentního případu navrhni nový OP, jinak **se zeptej**.
 
 ### 7. Připrav obsah
 
@@ -234,7 +254,8 @@ Fáze OP:    návrh Identifikace požadavku → Nabídnuto (zapíše se jen po p
 Text:       <prvních 5 řádků zápisu>
 ```
 
-Do náhledu patří i řádky `Účastníci:` (vlastník klienta, když není zapisující) a `Chyby Pocketu:` (krok 7).
+Do náhledu patří i řádky `Účastníci:` (vlastník klienta, když není zapisující), `Chyby Pocketu:` (krok 7) a u každého návrhu
+zprávy `Oslovení:` (registr, oslovení, zdroj, výsledek kontroly skriptem).
 U naplánované Události (větev A2) místo řádku `Aktivita:`:
 
 ```
@@ -304,8 +325,11 @@ celý seznam: stávající účastníky s jejich `id` + vlastníka.
 
 Jen když se změnil stav případu (vždy u šablony L). `businessCase_get` → sestav kartu podle šablony → `businessCase_update(description=…)`.
 Ruční text, který v popisu napsal člověk, **zachovej** pod nadpisem „Původní poznámky“. „Klíčová rozhodnutí“ jen doplňuj.
-Pole OP (banka, výše, LTV…) neměň. Výši OP (`totalAmount`) jen na výslovný pokyn, např. „hodnota OP = 65 % z odhadu“
-(odhad bývá jen v PDF příloze e-mailu, kterou MCP nepřečte: zeptej se na částku).
+**Pole OP z hovoru.** Když hovor evidentně řeší tento případ (stejná definice jako v kroku 6), doplň **prázdná** vlastní pole OP
+podle `references/sablony-zapisu.md`, „Pole OP z hovoru“: jen co zaznělo, počítané hodnoty (LTV) se vzorcem, roletky přesným textem,
+v náhledu „prázdné → nové“. Vyplněnou hodnotu přepiš jen jistou novou hodnotou a jako „staré → nové“. Výši OP (`totalAmount`)
+existujícího OP měň jen na výslovný pokyn, např. „hodnota OP = 65 % z odhadu“ (odhad bývá jen v PDF příloze e-mailu, kterou MCP
+nepřečte: zeptej se na částku). Fáze jen jako návrh (krok 13).
 
 ### 11. Doplň kartu klienta (maximum údajů)
 
@@ -313,11 +337,19 @@ Na kartu klienta patří **maximum toho, co z hovoru jistě plyne** a platí nap
 
 - **standardní pole:** e-mail a telefon, adresa bydliště, IČO a DIČ (OSVČ), plátce DPH, zdroj kontaktu, tipař (`category`,
   určuje dělení provize, proto jen prázdné a výslovně jmenovaný tipař, jinak se zeptej), sociální sítě;
-- **vlastní pole:** počet dětí, zaměstnavatel, pozice, nájmy v DP, čistý nájem;
+- **vlastní pole:** osobní (vzdělání, rodinný stav, zúžení SJM, počet dětí, hlavní banka), zaměstnání (čistý příjem, zaměstnavatel,
+  pozice, nástup, HPP/DPČ/DPP), výdaje (bydlení, domácnost, stávající úvěry po řádcích), nájmy (v DP, současný a budoucí čistý
+  nájem), podnikání (počátek, obor, svobodné povolání, paušál, paušální daň). Mapování „co zaznělo → klíč“ je v šabloně;
+  bankovní řádky BT kredit jen z výpočtu, pole typu soubor jen čti;
 - **Profil klienta v `notice`:** osoba a domácnost, vazby (spolužadatel, firma), příjmy, nemovitosti, závazky, konce fixací,
   cíle, servisní příležitosti, preferovaná komunikace. Ruční text zůstane pod „Původní poznámky“.
 
 Před zápisem `company_get`. Prázdné doplň, existující přepiš jen jistou hodnotou a změnu „staré → nové“ ukaž v náhledu.
+Měsíční příjem ze závislé činnosti je v poli vždy **čistý**. Zazní-li jen hrubý, přepočítej ho na čistý (vzorec v šabloně,
+„Přepočet hrubé mzdy na čistou“) a v náhledu i v profilu ho označ „přepočet z hrubé“; doložená čistá mzda (páska, potvrzení
+o příjmu, výpis) ho později přepíše (Adam, 12. 10. 2026).
+Do `customFields` posílej jen měněné klíče (`null` nebo prázdná hodnota pole smaže). Kontakt nebo adresu posílej s `addressName`
+(stávající, u prázdné „Sídlo klienta“): u založení je povinný, u úpravy ho MCP při vynechání doplní, poslat ho nevadí. Po zápisu `company_get` a kontrola, že pole sedí.
 RČ a číslo účtu jen z dokumentu (tvrdé pravidlo 5). Co MCP neumí (jméno a příjmení zvlášť, titul, datum narození, příznak fyzické osoby), uveď v souhrnu
 jako „doplnit v UI“. Pole, klíče a šablona profilu: `references/sablony-zapisu.md`, „Karta klienta“.
 
@@ -330,11 +362,20 @@ a řešitelem, kterou je potřeba hlídat zvlášť. Co dodá klient, je v zápi
 Adam ponechal navržený úkol jen u 1 ze 7 hovorů.
 
 - `task_create(title, deadline, owner=<krok 0>, company=<id>, businessCase=<id>, description=<checklist + návrh e-mailu>, tags="AI zápis")`.
+- **Checklist s odškrtáváním** (formát v šabloně): bod = `☐ kdo · co · do kdy`, splněný `☑ … · hotovo <datum>`. `deadline` úkolu
+  = termín nejbližšího otevřeného bodu, ať Raynet upozorní včas. Raynet zaškrtávací políčka v úkolu nemá, `☐`/`☑` jsou znaky textu.
+- **Odškrtávání:** (a) při každém dalším běhu ke klientovi načti otevřené úkoly se štítkem „AI zápis“
+  (`task_list(companyId=<id>, tags="AI zápis")`, stav není COMPLETED/CANCELLED) a body, které podle hovoru, e-mailu nebo zápisu
+  evidentně proběhly, navrhni v náhledu odškrtnout; (b) na pokyn v chatu („odškrtni odhadce u Nováka“). Po odškrtnutí posuň
+  `deadline` na další otevřený bod. Když jsou odškrtnuté všechny, navrhni úkol dokončit (`status="COMPLETED"`, do `solution`
+  jedna věta, co se udělalo). Nové body z hovoru přidej do existujícího otevřeného úkolu, nový úkol nezakládej.
 - Řešitel jiný než zapisující: po založení `task_get` a přepsat osobu u druhého účastníka v `participants`
   (`resolverPerson` nefunguje). Výsledek ověř přes `task_get`.
 - Návrh e-mailu klientovi patří do popisu úkolu po úvodní schůzce, po nabídce a vždy, když v hovoru zazní „pošlu vám…“.
   Když uživatel chce e-mail „sem do chatu“, dej ho do chatu ke zkopírování (Adam, 12. 10. 2026). Co se vyřešilo na místě
   (např. faktura zaplacená při schůzce), do e-mailu nepiš.
+- **Oslovení a registr** urči před psaním (tvrdé pravidlo 8, `references/email-style.md`, „Tykání a vykání“) a hotový text
+  prožeň `scripts/check_tykani.py`. Když registr v kartě chybí nebo se změnil, navrhni doplnit řádek `Komunikace:`.
 - **Návrh e-mailu** piš podle `references/email-style.md` (stavba a formulace z Adamových e-mailů a pravidla naučená z jeho úprav).
   Podklady chtěj jen ty, které chybí: co je potřeba podle typu případu a kde zjistit, co už přišlo, je v `references/podklady.md`.
   Co si poradce zajistí sám (LV, kupní smlouva z katastru), po klientovi nechtěj.
@@ -370,6 +411,9 @@ Hermes ráno, nebo pokyn „připrav dnešní schůzky":
 3. **Připoj** na konec `description` blok „PŘÍPRAVA (AI, <datum>)“ podle šablony (Doptat · Ověřit · Mít po ruce). Původní text,
    pozvánku a odkaz na Meet nech beze změny. Když blok s dnešním datem už existuje, nepřidávej ho.
 4. Náhled všech příprav a jedno potvrzení na celek.
+5. Na konec náhledu přidej **otevřené body checklistů** poradce s termínem dnes nebo po termínu
+   (`task_list(ownerId=<krok 0>, tags="AI zápis", deadlineTill=<dnes 23:59>)`, jen body `☐`), ať je vidí ráno najednou.
+   Nic se nezapisuje.
 
 ## Když něco nesedí
 
@@ -378,7 +422,7 @@ Hermes ráno, nebo pokyn „připrav dnešní schůzky":
 | Klient nenalezen | navrhni lead; klienta fyzickou osobu zakládá člověk v UI |
 | Víc kandidátů na klienta, OP nebo aktivitu k dokončení | zastav, předlož seznam, nech vybrat |
 | Bankéřský hovor, část nejde přiřadit | zapiš jen jisté části, na zbytek se zeptej |
-| Případ z hovoru není mezi OP klienta | zeptej se, nesahej po jiném OP |
+| Případ z hovoru není mezi OP klienta | nesahej po jiném OP; evidentní případ → návrh nového OP (krok 6), jinak se zeptej |
 | Pocket prohodil mluvčí | oprav podle obsahu, nejisté označ `[k ověření]`; přejmenování mluvčích nech na uživateli (MCP to neumí) |
 | Shrnutí Pocketu tvrdí něco jiného než přepis | platí přepis; rozdíl uveď v náhledu („Chyby Pocketu“) |
 | Naplánovaná aktivita je Událost | do Události nezapisovat, větev A2 (krok 9) |
@@ -414,10 +458,11 @@ potvrzování někde zjednodušit; tvrdé pravidlo 6 tím neplatí o nic méně 
 
 Načti podle potřeby:
 
-- **`references/sablony-zapisu.md`**: šablony S / M / L, karta OP, bonita po bankách, bankéř, souhrnný úkol, příprava, vlastní pole klienta.
-  Otevři pokaždé před psaním textu.
-- **`references/raynet-reference.md`**: uživatelé, typy aktivit (Událost bez Výsledku), fáze OP, kategorie, povinná pole,
-  vlastní pole, pasti (completed, řešitel úkolu, Google kalendář).
+- **`references/sablony-zapisu.md`**: šablony S / M / L, karta OP, bonita po bankách, bankéř, souhrnný úkol, příprava,
+  karta klienta s mapováním „co zaznělo → vlastní pole“, pole OP na pokyn. Otevři pokaždé před psaním textu.
+- **`references/raynet-reference.md`**: uživatelé, typy aktivit (Událost bez Výsledku), fáze OP, standardní pole klienta a OP,
+  všechny klíče vlastních polí s přesnými hodnotami roletek a formáty, soubory a přílohy, pasti (completed, řešitel úkolu,
+  Google kalendář, `addressName`, mazání prázdnou hodnotou).
 - **`references/pocket-reference.md`**: tvary odpovědí Pocketu, formáty `recordingId`, limity action items.
 - **`references/html-formatting.md`**: co Raynet v HTML polích uloží (tabulky a `<pre>` ne).
 - **`references/email-style.md`**: jak Adam píše e-maily, včetně pravidel naučených z jeho úprav. Otevři před návrhem e-mailu.
@@ -426,4 +471,5 @@ Načti podle potřeby:
   nastavení Raynetu.
 
 Skripty ve `scripts/` potřebují jen Python 3 se standardní knihovnou: `match_name.py` (párování jmen), `md_to_raynet_html.py`
-(Markdown → HTML, redakce), `make_email_draft.py` (koncept e-mailu), `audit_log.py` (audit log).
+(Markdown → HTML, redakce), `make_email_draft.py` (koncept e-mailu), `check_tykani.py` (tykání a vykání v návrhu zprávy),
+`audit_log.py` (audit log).

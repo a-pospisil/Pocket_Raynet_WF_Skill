@@ -92,14 +92,63 @@ Tón je věcný a stručný. Žádné „Doufám, že se máte dobře", žádné
 
 ## Tykání a vykání
 
-Klientům vyká. Tyká jen tam, kde tyká i v hovoru — typicky známí, kolegové,
-spolupracující poradci a daňový poradce. Pocket to v přepisu pozná
-(„Ahoj Martine", „čau") a návrhy e-mailů od Pocketu to tak mají.
+**Striktní pravidlo (Adam, 12. 10. 2026):** u každého příjemce hlídej, jestli mu pisatel tyká, nebo vyká, a podle toho
+piš celou zprávu. Platí pro návrh e-mailu, e-mail do chatu, koncept `.eml`, SMS a WhatsApp. Zápisy do Raynetu jsou
+ve 3. osobě a pravidlo se jich netýká. Omylem tykat klientovi je chyba, kterou nejde vzít zpět.
 
-Oslovení při tykání: „Ahoj <jméno v 5. pádě>," — *Ahoj Martine*.
+### Tři registry
 
-Když z hovoru nejde poznat, **vykej**. Omylem vykat známému je drobnost,
-omylem tykat klientovi ne.
+| Registr | Oslovení | Tvary | Rozloučení |
+|---|---|---|---|
+| **V1 vykání + příjmení** (výchozí u klientů) | „Dobrý den, pane Nováku,“ / „Dobrý den, paní Nováková,“ | Vy, Vás, Vám, Váš **s velkým V**; máte, pošlete, dejte vědět | „S pozdravem“ / „Děkuji a přeji hezký den“ |
+| **V2 vykání + křestní jméno** (bližší klienti) | „Dobrý den, Petře,“ | stejné jako V1, velké V | stejné jako V1 |
+| **T tykání** (známí, kolegové, partneři, část bankéřů) | „Ahoj Petře,“ | Ty, Ti, Tě, Tebe, Tobě, Tvůj, Tvoje **s velkým T** (Adam, 12. 10. 2026); máš, pošli, dej vědět | „Díky, Adam“ nebo „Měj se“ (Adam, 12. 10. 2026); u kolegy jeho křestní jméno |
+
+Jméno v oslovení je vždy v 5. pádě (Petře, Honzo, pane Nováku, paní Nováková). Tvar jména ověř v Raynetu, ne v Pocketu.
+
+### Jak registr určit (v tomto pořadí)
+
+Posuzuje se vztah **pisatele** (poradce z kroku 0, který zprávu podepíše) a příjemce. Když píše kolega, rozhoduje jeho vztah,
+ne Adamův. **Tykání je vzájemné** (Adam, 12. 10. 2026: „pokud mi klient tyká, já jemu také tykám“): T platí, když tyká
+aspoň jedna strana, V jen když si vykají obě.
+
+1. **Pokyn v chatu** („Petrovi tykám“) má přednost. Zapiš ho do karty (bod 5).
+2. **Uložený záznam v Raynetu:** řádek `Komunikace:` v Profilu klienta (`notice`), u kontaktní osoby (bankéř, partner)
+   v její `notice`, např. `Komunikace: Adam tyká (Ahoj Petře) · Eva vyká (V1)`. Pole `salutation` nepoužívej: je jedno
+   pro celý tým, ale tykání je vztah jednoho poradce.
+3. **Poslední e-maily mezi pisatelem a dotyčným, oběma směry** (`email_list(companyId=…)` → `email_get`): oslovení
+   („Ahoj Adame“ od klienta, „Ahoj Petře“ od pisatele) a tvary v textu. Platí ten nejnovější.
+4. **Přepis hovoru, věty mezi pisatelem a dotyčným v obou směrech:** „ahoj, čau, máš, pošli, ty“ = T; „dobrý den, máte,
+   pošlete, Vy“ = V. Prohozené mluvčí mezi nimi dvěma tu nevadí (tykání kterékoli strany = T). **Důkazem není tykání
+   třetí osobě** (klient tyká manželce, kolegovi nebo makléři v místnosti): počítá se jen věta s oslovením pisatele
+   („Adame, pošli…“) nebo zjevně jemu určená. Shrnutí Pocketu ani návrhy e-mailů od Pocketu nejsou důkaz.
+5. **Nic z toho:** V1 a v náhledu `Oslovení: V1 – neověřeno`.
+
+Neformálnější registr (V1 → V2 → T) jen na důkaz z bodů 1–4, nikdy odhadem. Když se zdroje rozcházejí (karta říká V,
+dnešní hovor T), navrhni v náhledu změnu karty a e-mail napiš podle nejnovějšího důkazu z bodu 3 nebo 4; když ani to
+není jisté, zeptej se.
+
+**Víc oslovených najednou** (manželé, spolužadatelé): když všem pisatel tyká, „Ahoj Petře a Jano,“ a množné „vy“ malým.
+Když aspoň jednomu vyká, celý e-mail ve vykání („Dobrý den, pane Nováku, paní Nováková,“) a v náhledu na to upozorni.
+Kolegové v kopii registr neurčují.
+
+### Kontrola před ukázáním návrhu (povinná)
+
+Hotový text (bez podpisu) prožeň skriptem:
+
+```bash
+python3 scripts/check_tykani.py --rezim vykani|tykani --prijemcu <počet oslovených> navrh.txt
+```
+
+Skript najde tvary druhého registru (tykací zájmena a slovesa ve vykání, velké V a vykací slovesa v tykání, malé „vám“
+při vykání jednomu člověku, nesedící oslovení). **Návrh s jediným nálezem uživateli neukazuj**, oprav ho a pusť skript
+znovu. Bez Pythonu projdi text ručně podle tabulky výše. V náhledu uveď řádek
+`Oslovení: T – „Ahoj Petře,“ (zdroj: klient tyká, e-mail 3. 10. „Ahoj Adame“) · kontrola OK`.
+
+### Uložení do karty
+
+Když registr zjistíš z bodu 1, 3 nebo 4 a v kartě chybí nebo je jiný, navrhni v náhledu doplnit řádek `Komunikace:`
+v Profilu klienta (krok 11) nebo v `notice` kontaktní osoby. Příště se pak registr bere z karty.
 
 ## Naučená pravidla
 

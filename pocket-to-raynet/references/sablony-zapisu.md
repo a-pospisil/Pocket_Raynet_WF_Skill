@@ -17,6 +17,7 @@ ukazují jen formát.
 - [Souhrnný úkol a návrh e-mailu](#souhrnný-úkol-a-návrh-e-mailu)
 - [Příprava před schůzkou](#příprava-před-schůzkou)
 - [Karta klienta: maximum údajů](#karta-klienta-maximum-údajů)
+- [Pole OP z hovoru](#pole-op-z-hovoru)
 
 ## Zásady
 
@@ -201,18 +202,34 @@ Drobnosti po schůzce jdou do **jednoho úkolu** (pravidlo z 1. 10. 2026, vault 
 úkol má jen věc s vlastním termínem a řešitelem, kterou je potřeba hlídat zvlášť (nabídka před další schůzkou, kontrola za několik
 měsíců). Co dodá klient, patří do zápisu a do návrhu e-mailu, ne do úkolů.
 
-- Název: `<klient> – další kroky po schůzce <datum>`, termín = nejbližší termín z checklistu, řešitel = vlastník OP.
+- Název: `<klient> – další kroky po schůzce <datum>`, termín (`deadline`) = termín nejbližšího **otevřeného** bodu, řešitel = vlastník OP.
 - Popis:
 
 ```html
-<p><b>Checklist</b></p>
+<p><b>Checklist</b> <i>(☐ otevřené · ☑ hotovo)</i></p>
 <ul>
-<li>☐ Adam: potvrdit odhadce · dnes</li>
-<li>☐ Eva: bonita v kalkulaci KB a ČSOB · do 2. 10.</li>
+<li>☑ Adam · potvrdit odhadce · 1. 10. · <i>hotovo 1. 10.</i></li>
+<li>☐ Eva · bonita v kalkulaci KB a ČSOB · do 2. 10.</li>
+<li>☐ Adam · poslat nabídku 2 bank · do 6. 10.</li>
 </ul>
 <p><b>Návrh e-mailu klientovi</b> <i>(odeslat z Raynetu)</i></p>
 <p>Dobrý den, …</p>
 ```
+
+### Odškrtávání checklistu
+
+Raynet nemá v úkolu podúkoly ani zaškrtávací políčka (úkol = jeden zadavatel a jeden řešitel). Checklist je proto text se znaky
+`☐` a `☑`, který se dá číst v UI, v mobilu i v seznamu úkolů. Odškrtávání:
+
+| Kdo | Jak |
+|---|---|
+| **Skill při dalším běhu ke klientovi** | načte otevřené úkoly se štítkem „AI zápis“ (`task_list(companyId=<id>, tags="AI zápis")`, stav NEW nebo SCHEDULED) a body, které podle nového hovoru, e-mailu nebo zápisu kolegy evidentně proběhly, navrhne v náhledu: `☐ → ☑ … · hotovo <datum>` |
+| **Uživatel v chatu** | „odškrtni odhadce u Nováka“ → skill najde úkol, ukáže změnu a po potvrzení ji zapíše |
+| **Uživatel v Raynetu** | v Zadání úkolu přepíše `☐` na `☑`; celý úkol uzavře „Mám hotovo“ |
+
+Po každém odškrtnutí skill posune `deadline` na nejbližší otevřený bod, ať Raynet upozorní na další krok. Když jsou odškrtnuté
+všechny body, navrhne úkol dokončit (`status="COMPLETED"`, do `solution` jedna věta). Nové body z dalšího hovoru ke stejnému
+klientovi a OP přidá do existujícího otevřeného úkolu, nový nezakládá. Splněné body zůstávají v seznamu (stopa, kdo co kdy udělal).
 
 Návrh e-mailu se přidává po úvodní schůzce, po prezentaci nabídky a vždy, když v hovoru zazní „pošlu vám shrnutí / seznam podkladů“.
 E-mail je pro klienta: bez interních poznámek, bez provizí, bez bonity po bankách (jen závěr), s tím, co potřebujeme a do kdy.
@@ -236,15 +253,17 @@ Adam, 1. 10. 2026: **na kartu klienta doplnit maximum údajů.** Karta klienta d
 (kontakty, domácnost, příjmy, portfolio, úvěry a konce fixací pro servis). Karta OP drží konkrétní případ.
 
 Postup: `company_get` → porovnat s tím, co jistě plyne z hovoru → v náhledu ukázat **prázdné → nové** a **staré → nové** →
-po potvrzení jedno `company_update`. Prázdné pole se doplní. Existující hodnotu přepiš, jen když je nová jistá, a změnu ukaž
+po potvrzení jedno `company_update`. U každého pole uveď i **odkud** (krátká citace nebo čas v přepisu, u dokumentu jeho
+název), ať jde hodnota rychle ověřit. Prázdné pole se doplní. Existující hodnotu přepiš, jen když je nová jistá, a změnu ukaž
 v náhledu. Nejisté (zkomolené číslo, prohozený mluvčí) nezapisuj a dej do „Doptat“.
 
 ### Standardní pole (`company_update`)
 
 | Pole | Co | Pozn. |
 |---|---|---|
-| `email`, `email2`, `phone` | kontakty | Jiný e-mail než stávající → `email2`, nikdy nepřepsat primární bez potvrzení. |
+| `email`, `email2`, `phone` | kontakty (`phone` = Tel 1) | Jiný e-mail než stávající → `email2`, nikdy nepřepsat primární bez potvrzení. Vždy s `addressName` (níže). |
 | `street`, `city`, `zipCode`, `province`, `country` | adresa bydliště | Jen adresa, kterou klient uvedl jako svou, ne adresa nemovitosti. `country` jako ISO kód (CZ). |
+| `addressName` | název adresy | Posílej s každým adresním nebo kontaktním polem: u založení je povinný, u úpravy ho MCP jinak doplní sám. Stávající hodnotu z `company_get` zachovej, u prázdné „Sídlo klienta“. |
 | `regNumber`, `taxNumber`, `taxPayer` | IČO a DIČ (OSVČ), plátce DPH (`YES`/`NO`) | U klienta s s.r.o. patří IČO firmy k firmě, ne k osobě. |
 | `contactSource` | odkud klient přišel | 156 doporučení tipaře · 82 vlastní kontakt · 81 doporučení (netipař) · 79 web/poptávka · 179 sociální sítě · 196 workshop |
 | `category` | **tipař** | Číselník jmen tipařů (176 Bez tipaře, 205 Monopoly Advisory, 180 Úspěšné reality…; `raynet://codelist/companyCategory`). **Určuje dělení provize** → měnit jen prázdné, a když se tipař v hovoru výslovně jmenuje; jinak se zeptej. |
@@ -257,16 +276,59 @@ osoby: věk nebo rok narození patří do profilu, ostatní skill uvede v souhrn
 
 ### Vlastní pole (`customFields`)
 
-| Klíč | Obsah | Typ |
-|---|---|---|
-| `Pocet_deti_cf874` | počet dětí (vyživovaných) | celé číslo |
-| `zamestnava_ffa65` | zaměstnavatel | text |
-| `pracovni_p_f7e4d` | pracovní pozice | text |
-| `Najmy_v_DP_bb662` | nájmy v daňovém přiznání | ano/ne |
-| `Soucasny_c_952ff` | současný čistý nájem celkem za měsíc | **text** (číslo jako řetězec, např. `"27000"`) |
+Co z hovoru jistě plyne, jde i do vlastních polí. Klíče, typy a přesné hodnoty roletek: `raynet-reference.md`, „Vlastní pole“.
+Do `customFields` posílej **jen klíče, které měníš** (`null` nebo prázdná hodnota pole smaže). Roletky jen přesným textem.
 
-`Rodne_cisl_ed0da` (RČ) jen z dokumentu (DP, doklad, smlouva), nikdy z hovoru, v náhledu se zdrojem (tvrdé pravidlo 5); `Zadatel_v__a594e` a `Alternativ_b3c97` mají nejasný význam, nevyplňovat.
-Klíče jsou z průzkumu instance k 2026-10-01; nové pole se objeví až u vyplněného záznamu (`raynet-reference.md`, „Vlastní pole“).
+| Co zazní v hovoru | Klíč | Zápis |
+|---|---|---|
+| vzdělání | `vzdelani_b79fe` | roletka, např. `vysokoškolské` |
+| rodinný stav | `rodinny_st_adceb` | roletka, např. `ženatý / vdaná` |
+| zúžené SJM | `Zuzeni_SJ_f0b36` | `Ano` / `Ne` |
+| počet vyživovaných dětí | `Pocet_deti_cf874` | číslo |
+| banka hlavního účtu | `hlavni_bez_5fef9` | `ČSOB` · `KB` · `ČS` · `RB` · `Fio` · `Airbank` · `mBank` |
+| čistý měsíční příjem ze závislé činnosti | `mesicni_pr_0a298` | číslo, např. `65000`. **Vždy čistý.** Zazní-li jen hrubý, přepočítej ho (níže) a v náhledu i profilu označ „přepočet z hrubé“; doložená čistá mzda ho později přepíše (Adam, 12. 10. 2026) |
+| zaměstnavatel · pozice | `zamestnava_ffa65` · `pracovni_p_f7e4d` | text |
+| nástup k zaměstnavateli | `nastup_fbbb1` | datum `"2019-03-01"` |
+| druh pracovního poměru | `Druh_fcd16` | `HPP` · `DPČ` · `DPP` |
+| náklady na bydlení · výdaje domácnosti (měsíčně) | `DruhBankaJ_57559` · `DruhBankaJ_f41e1` | text |
+| stávající úvěry | `DruhBankaJ_a886e`, `_4de8f`, `_6314d`, `_8f94a`, `_cae7c` (řádky 1–5) | text, jeden úvěr na řádek: `druh / banka / jistina / úrok % / splátka / měsíců / fixace / KF`; neznámý údaj `?` |
+| nájmy v daňovém přiznání | `Najmy_v_DP_bb662` | `true` / `false` |
+| současný čistý nájem celkem za měsíc | `Soucasny_c_952ff` | **text** `"27000"` |
+| čistý nájem po koupi | `Budouci_5f2ff` | **text** `"39000"` |
+| od kdy podniká · obor | `Pocatek_po_ab1d0` · `Druh_cinno_d75a7` | datum · text |
+| svobodné povolání | `Svobodne_p_705f3` | roletka (lékař, advokát, IT…) |
+| výdajový paušál | `Vyse_pausa_4549e` | `Bez paušálu` · `80 %` · `60 %` · `40 %` |
+| režim paušální daně | `Zadatel_v__a594e` | `true` / `false` |
+
+Řádky úvěrů plň shora a přepiš jen ty, které se v hovoru týkají stejného úvěru; řádek CELKEM (`DruhBankaJ_4c59a`) jen když
+jsou známé všechny úvěry. Stejné údaje patří i do Profilu klienta (Ostatní závazky, Nemovitosti), pole jsou pro rychlý přehled.
+
+**Nikdy z hovoru:** `Rodne_cisl_ed0da` (RČ), `cislo_OP_d2c59`, `OP_vydal_abab5`, `platnost_O_5ac2f`, `rodne_prij_1de2b`,
+`statni_pri_8265e` a `bankAccount`. Jen z dokumentu (DP, doklad, výpis, smlouva) a v náhledu se zdrojem (tvrdé pravidlo 5).
+**Jen z výpočtu BT kredit, nikdy odhad:** `Radek_101__b1dea` (ČS), `Radek_102__56301` (ČSOB HB), `Radek_37_z_d1a4d` (RB),
+`Radek_74_z_a6a87` (KB), `mBank_9af71`, `VysledekCS_a6436`, `Alternativ_b3c97`. **Nevyplňovat:** `Doplnujici_a57c0`
+(profil je v `notice`), `Bety_8f936` (význam neznámý). **Pole typu soubor** (DPFO, DPPO, výkazy, rozvahy, Přehled úvěrů) jen čti:
+říkají, co už v CRM je (`podklady.md`); nahrává je člověk v UI.
+
+### Přepočet hrubé mzdy na čistou (2026)
+
+Pro pole `mesicni_pr_0a298`, když klient řekne jen hrubou mzdu. Platí pro hlavní pracovní poměr s podepsaným prohlášením
+poplatníka; u DPP, DPČ, druhého zaměstnání a mzdy v cizí měně přepočet nedělej a čistý příjem dej do „Doptat“.
+
+```
+H  = hrubá měsíční mzda
+SP = 7,1 % × H, zaokrouhleno na Kč nahoru            (sociální: důchodové 6,5 % + nemocenské 0,6 %)
+ZP = 4,5 % × H, zaokrouhleno na Kč nahoru            (zdravotní)
+Z  = H zaokrouhlená na celé stokoruny nahoru         (základ zálohy)
+D  = 15 % × min(Z; 146 901) + 23 % × max(0; Z − 146 901), na Kč nahoru
+     (146 901 = 3 × průměrná mzda 2026 48 967 Kč)
+DS = max(0; D − 2 570)                               (sleva na poplatníka, měsíčně)
+čistá = H − SP − ZP − DS
+```
+
+Příklad: H 50 000 → SP 3 550 · ZP 2 250 · D 7 500 · DS 4 930 → **čistá 39 270**. Daňové zvýhodnění na děti
+(1. dítě 1 267, 2. dítě 1 860, 3. a další 2 320 Kč měsíčně) přičti, jen když klient řekne, že ho uplatňuje on; jinak ho vynech
+a do „Doptat“ dej „kdo uplatňuje děti“. V náhledu ukaž H, SP, ZP, DS a výsledek, ať jde výpočet zkontrolovat.
 
 ### Profil klienta (`notice`)
 
@@ -286,9 +348,37 @@ v Raynetu“).
 <p><b>Ostatní závazky:</b> KK limit 50 000 (ČS) · leasing auto 6 500 do 2027</p>
 <p><b>Cíle:</b> portfolio 5 bytů do 2030, cash flow > 0 na byt · preferuje FO, s.r.o. zvažuje</p>
 <p><b>Servis:</b> konec fixace ČSOB 6/2028 → refinancování (ozvat se 3 měs. předem)</p>
-<p><b>Komunikace:</b> preferuje e-mail, hovory po 17:00</p>
+<p><b>Komunikace:</b> Adam vyká (V1 „Dobrý den, pane Ukázkový“) · preferuje e-mail, hovory po 17:00</p>
 <p><b>Původní poznámky</b></p>
 <p>… ruční text beze změny …</p>
 ```
 
 Prázdný řádek vynech. Údaje o případu (záměr, bonita, strategie konkrétního úvěru) sem nepatří, jsou v kartě OP.
+
+## Pole OP z hovoru
+
+Platí, když hovor **evidentně řeší konkrétní případ** (definice v `SKILL.md`, krok 6; Adam, 12. 10. 2026): u nového OP se při
+založení vyplní, co jistě zaznělo, u existujícího OP se doplní prázdná pole. Vyplněnou hodnotu skill přepíše jen jistou novou
+hodnotou jako „staré → nové“, výši (`totalAmount`) existujícího OP jen na pokyn. Fáze jde vždy jen jako návrh.
+
+| Co zazní | Pole | Zápis |
+|---|---|---|
+| účel a typ úvěru | `category` + `Ucel_uveru_47dd5` | 116 hypotéka · 184 podnikatelský · 169 ze stavebního spoření · 189 spotřebitelský; účel roletkou (`koupě`, `refinancování`, `rekonstrukce`…) |
+| požadovaná výše | `totalAmount` + `vyse_uveru_ad8b6` | číslo, obě pole stejně |
+| hodnota nemovitosti nebo zástavy | `Hodnota_za_21c14` | číslo |
+| banka | `producent_6ef95` | celé obchodní jméno z roletky (`ČSOB Hypoteční banka, a.s.`); banka mimo seznam → jen do karty OP a zeptat se |
+| sazba · splatnost | `urokova_sa_51229` · `Splatnost_7586b` | číslo (`4.79`) · měsíce (`360`, ne roky) |
+| fixace · začátek a konec fixace | `Doba_fixac_172ca` · `platnost_f_e63c5` · `konec_fixa_65281` | roletka slovně (`5 let`) · datum · datum |
+| výše splátky | `vyse_splat_fff50` | číslo |
+| pojištění k úvěru | `Pojisteni_1b7ae` | `ANO` · `NE` · `ČSOB - Náš život` |
+| LTV | `LTV_eedee` | jen spočítané z řečených čísel: výše ÷ hodnota zástavy × 100, vzorec v náhledu |
+| datum představení nabídky | `Predstaven_47ad0` | datum (plní ho i workflow při fázi Nabídnuto, nepřepisovat) |
+| datum podpisu žádosti · vyjádření banky | `Datum_podp_02aa4` · `Vyjadreni__d8106` | datum |
+| typ provize | `Provize_dc7d2` | `Jednorázová` · `Postupná` · `Mimo BT (podnikatelský úvěr)` |
+| doporučení od tipaře | `source` | 156 |
+| očekávané dokončení | `scheduledEnd` | `yyyy-MM-dd` |
+| číslo smlouvy | `cislo_smlo_60eb1` | jen z dokumentu nebo e-mailu banky, z hovoru ne (čísla se komolí) |
+
+Fáze (`businessCasePhase`) jde vždy jen jako návrh (krok 13). Shrnutí, varianty a rozhodnutí patří do karty OP (`description`).
+V náhledu ukaž **prázdné → nové** a **staré → nové**, přepis existující hodnoty jen s potvrzením. Před zápisem ověř, že OP patří
+správnému klientovi (`company` = id klienta). Po zápisu `businessCase_get` a kontrola, že pole sedí.

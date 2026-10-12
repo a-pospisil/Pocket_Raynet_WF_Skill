@@ -46,7 +46,7 @@ Tyhle hranice nejsou opatrnost, ale technická omezení MCP ověřená auditem:
 
 | | Proč |
 |---|---|
-| **Nezaloží klienta** | `company_create` umí vytvořit jen organizaci, ne fyzickou osobu. Neznámý volající se založí jako **lead**, klienta zakládá člověk v UI. |
+| **Nezaloží klienta sám** | `company_create` umí vytvořit jen organizaci, ne fyzickou osobu. Neznámý volající se založí jako **lead**. Klienta založí jen na výslovný pokyn (jako organizaci, typ se přepne v UI). |
 | **Nezaloží e-mail ani dopis** | MCP je umí jen číst. Návrh e-mailu klientovi je v popisu souhrnného úkolu, na pokyn v chatu nebo jako koncept do pošty (`.eml`). |
 | **Neodešle e-mail** | Jen připraví návrh. Odeslání je vždy na člověku. |
 | **Nepřepíše záznam beze stopy** | Každý přepis uloží do audit logu původní stav — přes MCP jiná cesta zpět není. |
@@ -54,10 +54,11 @@ Tyhle hranice nejsou opatrnost, ale technická omezení MCP ověřená auditem:
 | **Nezaloží duplicitu k naplánované aktivitě** | Naplánovaný hovor nebo schůzku z téhož dne, které proběhly v jiný čas, dokončí. Aktivity z jiných dní nechá být. |
 | **Nezruší schůzku** | Zrušení v Raynetu ji smaže i v Google kalendáři. Duplicitní nebo testovací telefonát zruší jen na výslovný pokyn. |
 | **Nezapíše zápis do Události** | Událost nemá v UI pole „Výsledek“, zápis by nebyl vidět. Navrhne převod na Schůzku v UI, nebo na pokyn založí novou Schůzku. |
-| **Nezmění pole OP** | Navrhne jen posun fáze. Výši OP nastaví jen na výslovný pokyn. |
+| **Nemění OP naslepo** | OP založí a jeho prázdná pole doplní, jen když hovor evidentně řeší konkrétní případ, vždy po potvrzení. Fázi jen navrhne, výši existujícího OP změní jen na pokyn. |
 | **Nepřejmenuje mluvčí v Pocketu** | MCP Pocketu to neumí. Skill napíše, koho přejmenovat, a opraví to v zápisu podle přepisu. |
 | **Nenahraje přílohu** | Jen odkaz URL. Pocket audio navíc expiruje po hodině. |
 | **Nezapíše rodné číslo ani číslo účtu z hovoru** | Redakce probíhá automaticky v převodním skriptu. Do karty klienta jen z dokumentu. |
+| **Nesplete tykání a vykání** | Registr bere z karty, e-mailů nebo řeči pisatele, bez důkazu vyká; každý návrh prochází kontrolou skriptem. |
 | **Neradí k fakturaci** | V zápisu je fakturace jen tak, jak ji popsal klient. |
 | **Nezapíše bez potvrzení** | Vždy nejdřív ukáže návrh. |
 
@@ -71,7 +72,7 @@ pocket-to-raynet/
 │   ├── raynet-reference.md         # uživatelé, číselníky, vlastní pole, pasti
 │   ├── pocket-reference.md         # tvary odpovědí, formáty id, limity
 │   ├── html-formatting.md          # co Raynet v HTML polích unese
-│   ├── email-style.md              # jak Adam píše e-maily + naučená pravidla
+│   ├── email-style.md              # jak Adam píše e-maily, tykání a vykání, naučená pravidla
 │   └── podklady.md                 # jaké podklady chtít podle případu, kde zjistit, co přišlo
 ├── scripts/                        # viz Nástroje
 └── assets/
@@ -109,7 +110,7 @@ Skill je složka `pocket-to-raynet/`. Ve všech prostředích potřebuje připoj
 
 ## Nástroje
 
-Čtyři skripty, jen standardní knihovna Pythonu 3, bez závislostí.
+Pět skriptů, jen standardní knihovna Pythonu 3, bez závislostí.
 
 **Párování jmen** — `scripts/match_name.py`. Filtr `name` v Raynetu rozlišuje diakritiku, přepis bývá v pádě a cizí jména
 jsou v CRM zapsaná foneticky. Skript z přepsaného jména vyrobí hledací výrazy (včetně českého přepisu: `Schneider` → `Šna…`)
@@ -126,6 +127,15 @@ python3 pocket-to-raynet/scripts/md_to_raynet_html.py summary.md --check   # re�
 
 **Koncept e-mailu do pošty** — `scripts/make_email_draft.py`. Vyrobí `.eml` s hlavičkou `X-Unsent: 1`, takže se v Apple Mail
 otevře jako koncept k úpravě, ne jako přijatá zpráva jen pro čtení. Nic se neodesílá.
+
+**Tykání a vykání** — `scripts/check_tykani.py`. Poslední kontrola návrhu zprávy: najde tvary druhého registru (tykací
+slovesa a zájmena ve vykání, velké V a vykací slovesa v tykání, malé „vám“ jednomu člověku, malé „ti/tvůj“ v tykání,
+nesedící oslovení). Návrh
+s nálezem se neukazuje. Registr určuje skill podle `email-style.md`.
+
+```bash
+python3 pocket-to-raynet/scripts/check_tykani.py --rezim vykani --prijemcu 1 navrh.txt
+```
 
 **Audit log** — `scripts/audit_log.py`. Řádek za každou akci; přepis bez uloženého původního stavu odmítne. `stats` ukáže
 u každého typu akce podíl návrhů potvrzených beze změny.
@@ -150,3 +160,11 @@ a že `status=COMPLETED` při založení nastaví čas dokončení na okamžik z
 12. 10. 2026 proběhl **první ostrý zápis ke klientovi** (úvodní schůzka). Odhalil, že naplánovaná schůzka z kalendáře byla
 v Raynetu typu **Událost**, která nemá v UI pole „Výsledek“, takže zápis nebyl na kartě klienta vidět. Doplněno tvrdé pravidlo 7
 a větev A2 (zápis jen do Schůzky nebo Telefonátu), režim „doslovně Pocket“ s kontrolou `--check` a e-mail do chatu na pokyn.
+
+12. 10. 2026 byl doplněn **úplný soupis polí Raynetu** podle Adamova manuálu (pole přečtená v Nastavení evidence, klíče
+ověřené zápisem a čtením přes MCP) a kontroly 119 reálných OP: standardní pole klienta a OP, klíče všech vlastních polí
+klienta i OP, přesné hodnoty roletek a formáty (`references/raynet-reference.md`). Skill podle toho plní víc vlastních
+polí klienta (mapování „co zaznělo → klíč“ v šabloně karty klienta), čte pole typu Soubor jako přehled dodaných dokladů
+a na výslovný pokyn vyplní i pole OP.
+Podle Adamových rozhodnutí z 12. 10. 2026 skill zakládá OP, když hovor evidentně řeší konkrétní případ, přepočítá hrubou mzdu na
+čistou a souhrnný úkol vede jako checklist `☐`/`☑`, který při dalších bězích odškrtává a posouvá termín úkolu na další otevřený bod.

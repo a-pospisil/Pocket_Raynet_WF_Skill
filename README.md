@@ -129,7 +129,8 @@ python3 pocket-to-raynet/scripts/md_to_raynet_html.py summary.md --check   # re�
 otevře jako koncept k úpravě, ne jako přijatá zpráva jen pro čtení. Nic se neodesílá.
 
 **Tykání a vykání** — `scripts/check_tykani.py`. Poslední kontrola návrhu zprávy: najde tvary druhého registru (tykací
-slovesa a zájmena ve vykání, velké V a vykací slovesa v tykání, malé „vám“ jednomu člověku, nesedící oslovení). Návrh
+slovesa a zájmena ve vykání, velké V a vykací slovesa v tykání, malé „vám“ jednomu člověku, malé „ti/tvůj“ v tykání,
+nesedící oslovení). Návrh
 s nálezem se neukazuje. Registr určuje skill podle `email-style.md`.
 
 ```bash

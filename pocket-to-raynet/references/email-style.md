@@ -102,23 +102,26 @@ ve 3. osobě a pravidlo se jich netýká. Omylem tykat klientovi je chyba, ktero
 |---|---|---|---|
 | **V1 vykání + příjmení** (výchozí u klientů) | „Dobrý den, pane Nováku,“ / „Dobrý den, paní Nováková,“ | Vy, Vás, Vám, Váš **s velkým V**; máte, pošlete, dejte vědět | „S pozdravem“ / „Děkuji a přeji hezký den“ |
 | **V2 vykání + křestní jméno** (bližší klienti) | „Dobrý den, Petře,“ | stejné jako V1, velké V | stejné jako V1 |
-| **T tykání** (známí, kolegové, partneři, část bankéřů) | „Ahoj Petře,“ | ty, ti, tebe, tvůj malým (`[odhad]`, upřesní naučená pravidla); máš, pošli, dej vědět | „Díky, Adam“ nebo „Měj se“ (Adam, 12. 10. 2026); u kolegy jeho křestní jméno |
+| **T tykání** (známí, kolegové, partneři, část bankéřů) | „Ahoj Petře,“ | Ty, Ti, Tě, Tebe, Tobě, Tvůj, Tvoje **s velkým T** (Adam, 12. 10. 2026); máš, pošli, dej vědět | „Díky, Adam“ nebo „Měj se“ (Adam, 12. 10. 2026); u kolegy jeho křestní jméno |
 
 Jméno v oslovení je vždy v 5. pádě (Petře, Honzo, pane Nováku, paní Nováková). Tvar jména ověř v Raynetu, ne v Pocketu.
 
 ### Jak registr určit (v tomto pořadí)
 
-Rozhoduje vztah **pisatele** (poradce z kroku 0, který e-mail podepíše), ne vztah Adama nebo druhé strany. Klient může
-Adamovi tykat a Adam mu vykat: platí, co dělá pisatel.
+Posuzuje se vztah **pisatele** (poradce z kroku 0, který zprávu podepíše) a příjemce. Když píše kolega, rozhoduje jeho vztah,
+ne Adamův. **Tykání je vzájemné** (Adam, 12. 10. 2026: „pokud mi klient tyká, já jemu také tykám“): T platí, když tyká
+aspoň jedna strana, V jen když si vykají obě.
 
 1. **Pokyn v chatu** („Petrovi tykám“) má přednost. Zapiš ho do karty (bod 5).
 2. **Uložený záznam v Raynetu:** řádek `Komunikace:` v Profilu klienta (`notice`), u kontaktní osoby (bankéř, partner)
    v její `notice`, např. `Komunikace: Adam tyká (Ahoj Petře) · Eva vyká (V1)`. Pole `salutation` nepoužívej: je jedno
    pro celý tým, ale tykání je vztah jednoho poradce.
-3. **Poslední e-maily pisatele dotyčnému** (`email_list(companyId=…)` → `email_get`, odesílatel = pisatel): oslovení
-   a tvary v textu. Platí ten nejnovější.
-4. **Přepis hovoru, jen řeč pisatele:** „ahoj, čau, máš, pošli, ty“ = T; „dobrý den, máte, pošlete, Vy“ = V. Shrnutí
-   Pocketu ani návrhy e-mailů od Pocketu nejsou důkaz (prohazují mluvčí). Když nejde jistě poznat, kdo mluví, důkaz to není.
+3. **Poslední e-maily mezi pisatelem a dotyčným, oběma směry** (`email_list(companyId=…)` → `email_get`): oslovení
+   („Ahoj Adame“ od klienta, „Ahoj Petře“ od pisatele) a tvary v textu. Platí ten nejnovější.
+4. **Přepis hovoru, věty mezi pisatelem a dotyčným v obou směrech:** „ahoj, čau, máš, pošli, ty“ = T; „dobrý den, máte,
+   pošlete, Vy“ = V. Prohozené mluvčí mezi nimi dvěma tu nevadí (tykání kterékoli strany = T). **Důkazem není tykání
+   třetí osobě** (klient tyká manželce, kolegovi nebo makléři v místnosti): počítá se jen věta s oslovením pisatele
+   („Adame, pošli…“) nebo zjevně jemu určená. Shrnutí Pocketu ani návrhy e-mailů od Pocketu nejsou důkaz.
 5. **Nic z toho:** V1 a v náhledu `Oslovení: V1 – neověřeno`.
 
 Neformálnější registr (V1 → V2 → T) jen na důkaz z bodů 1–4, nikdy odhadem. Když se zdroje rozcházejí (karta říká V,
@@ -140,7 +143,7 @@ python3 scripts/check_tykani.py --rezim vykani|tykani --prijemcu <počet osloven
 Skript najde tvary druhého registru (tykací zájmena a slovesa ve vykání, velké V a vykací slovesa v tykání, malé „vám“
 při vykání jednomu člověku, nesedící oslovení). **Návrh s jediným nálezem uživateli neukazuj**, oprav ho a pusť skript
 znovu. Bez Pythonu projdi text ručně podle tabulky výše. V náhledu uveď řádek
-`Oslovení: T – „Ahoj Petře,“ (zdroj: e-mail 3. 10.) · kontrola OK`.
+`Oslovení: T – „Ahoj Petře,“ (zdroj: klient tyká, e-mail 3. 10. „Ahoj Adame“) · kontrola OK`.
 
 ### Uložení do karty
 

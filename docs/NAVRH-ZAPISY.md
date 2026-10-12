@@ -178,6 +178,8 @@ Kladu je postupně v chatu, odpovědi doplním sem.
     čistá mzda ho později přepíše.
 7x. ✅ **Tykání a vykání striktně** (Adam, 12. 10.): registr V1 / V2 / T podle pisatele, zdroj karta → e-maily → přepis,
     bez důkazu vykat; kontrola `check_tykani.py` před každým návrhem zprávy; registr se ukládá do řádku `Komunikace:` v kartě.
+    Upřesnění téhož dne: tykání je vzájemné (tyká-li klient Adamovi, Adam mu tyká také); Ty/Ti/Tvůj s velkým T;
+    rozloučení „Díky, Adam“ nebo „Měj se“.
 8. ~~Úkoly pro tým a pro klienta.~~ Vyřešeno pravidlem z 1. 10. (drobnosti do jednoho úkolu, klient do zápisu a e-mailu).
 9. Návrh e-mailu klientovi se shrnutím.
 10. ~~Posun fáze a vyplnění polí OP.~~ Vyřešeno 12. 10. (7t): pole OP u evidentního případu, fáze jen návrh.

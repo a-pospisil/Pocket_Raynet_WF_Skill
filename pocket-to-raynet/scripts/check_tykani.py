@@ -10,6 +10,8 @@ Použití:
     python3 check_tykani.py --rezim vykani [--prijemcu 1] navrh.txt
     python3 check_tykani.py --rezim tykani --prijemcu 2 < navrh.txt
 
+V tykání hlídá i malé „ti/tvůj“: Adam píše Ty, Ti, Tvůj s velkým T (12. 10. 2026).
+
 Výstup: jeden nález na řádek („ř. 3: „pošli“ – sloveso v 2. os. j. č. (tykání)“). Návratový kód
 0 = čisté, 1 = nálezy. Citace předchozí zprávy (řádky začínající „>“) se nekontrolují.
 
@@ -88,6 +90,8 @@ def check(text, rezim, prijemcu=1):
                         nalezy.append((n, w, "zájmeno vy/váš jednomu člověku (vykání)"))
                 elif low in VY_SLOVESA and prijemcu == 1:
                     nalezy.append((n, w, "sloveso v 2. os. mn. č. jednomu člověku (vykání)"))
+                elif low in TY_ZAJMENA and w[0].islower():
+                    nalezy.append((n, w, "Adam píše Ty/Ti/Tvůj s velkým T"))
     return nalezy
 
 

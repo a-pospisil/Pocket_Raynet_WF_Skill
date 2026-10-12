@@ -21,7 +21,7 @@ Děkuji a přeji hezký den
 
 TYKANI = """Ahoj Petře,
 
-posílám ti shrnutí. Mrkni na varianty a dej vědět, která ti víc sedí.
+posílám Ti shrnutí. Mrkni na varianty a dej vědět, která Ti víc sedí.
 Kdyby něco, zavolej.
 
 Díky, Adam
@@ -53,6 +53,14 @@ class Tykani(unittest.TestCase):
     def test_spravne_tykani_je_ciste(self):
         self.assertEqual(check(TYKANI, "tykani"), [])
 
+    def test_male_ti_v_tykani(self):
+        nalezy = check("Ahoj Petře,\n\nposílám ti tvůj výpočet.\n", "tykani")
+        self.assertEqual([w for _, w, _ in nalezy], ["ti", "tvůj"])
+
+    def test_velke_ti_ve_vykani_je_chyba(self):
+        nalezy = check("Dobrý den, pane Nováku,\n\nposílám Ti výpočet.\n", "vykani")
+        self.assertEqual([w for _, w, _ in nalezy], ["Ti"])
+
     def test_velke_v_v_tykani(self):
         nalezy = check("Ahoj Petře,\n\nposílám Vám shrnutí.\n", "tykani")
         self.assertEqual([w for _, w, _ in nalezy], ["Vám"])
@@ -66,7 +74,7 @@ class Tykani(unittest.TestCase):
         self.assertEqual(check(text, "tykani", prijemcu=2), [])
 
     def test_oslovení_z_vykani(self):
-        nalezy = check("Dobrý den, pane Nováku,\n\nposílám ti shrnutí.\n", "tykani")
+        nalezy = check("Dobrý den, pane Nováku,\n\nposílám Ti shrnutí.\n", "tykani")
         self.assertEqual(len(nalezy), 1)
         self.assertIn("oslovení", nalezy[0][2])
 

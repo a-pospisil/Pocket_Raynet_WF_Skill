@@ -49,8 +49,9 @@ Platí vždy, bez výjimky. Zdůvodnění: `docs/NAVRH-ZAPISY.md`, kap. 4a.
    se na kartě klienta nezobrazí. Zápis patří jen do Schůzky (`Meeting`) nebo Telefonátu (`PhoneCall`). Naplánovaná Událost
    se řeší větví A2 v kroku 9 (Adam, 12. 10. 2026).
 8. **Tykání a vykání striktně.** Každá zpráva pro člověka (e-mail, SMS, WhatsApp) je celá v registru, který pisatel
-   s příjemcem používá: V1 vykání + příjmení, V2 vykání + křestní jméno, T tykání. Registr se bere z pokynu, z karty v Raynetu,
-   z posledních e-mailů pisatele nebo z jeho řeči v přepisu; bez důkazu vždy V1. Návrh se před ukázáním kontroluje skriptem
+   s příjemcem používá: V1 vykání + příjmení, V2 vykání + křestní jméno, T tykání. Tykání je vzájemné: tyká-li příjemce
+   pisateli, pisatel mu tyká také. Registr se bere z pokynu, z karty v Raynetu, z posledních e-mailů mezi nimi (oběma směry)
+   nebo z jejich vzájemné řeči v přepisu (ne z tykání třetí osobě); bez důkazu vždy V1. Ty/Ti/Tvůj s velkým T. Návrh se před ukázáním kontroluje skriptem
    `scripts/check_tykani.py` a s nálezem se neukazuje (Adam, 12. 10. 2026). Postup: `references/email-style.md`, „Tykání a vykání“.
 
 ## Postup

@@ -263,7 +263,7 @@ v náhledu. Nejisté (zkomolené číslo, prohozený mluvčí) nezapisuj a dej d
 |---|---|---|
 | `email`, `email2`, `phone` | kontakty (`phone` = Tel 1) | Jiný e-mail než stávající → `email2`, nikdy nepřepsat primární bez potvrzení. Vždy s `addressName` (níže). |
 | `street`, `city`, `zipCode`, `province`, `country` | adresa bydliště | Jen adresa, kterou klient uvedl jako svou, ne adresa nemovitosti. `country` jako ISO kód (CZ). |
-| `addressName` | název adresy | **Povinný, jakmile posíláš jakékoli adresní nebo kontaktní pole**, jinak update neprojde. Stávající hodnotu z `company_get` zachovej, u prázdné „Sídlo klienta“. |
+| `addressName` | název adresy | Posílej s každým adresním nebo kontaktním polem: u založení je povinný, u úpravy ho MCP jinak doplní sám. Stávající hodnotu z `company_get` zachovej, u prázdné „Sídlo klienta“. |
 | `regNumber`, `taxNumber`, `taxPayer` | IČO a DIČ (OSVČ), plátce DPH (`YES`/`NO`) | U klienta s s.r.o. patří IČO firmy k firmě, ne k osobě. |
 | `contactSource` | odkud klient přišel | 156 doporučení tipaře · 82 vlastní kontakt · 81 doporučení (netipař) · 79 web/poptávka · 179 sociální sítě · 196 workshop |
 | `category` | **tipař** | Číselník jmen tipařů (176 Bez tipaře, 205 Monopoly Advisory, 180 Úspěšné reality…; `raynet://codelist/companyCategory`). **Určuje dělení provize** → měnit jen prázdné, a když se tipař v hovoru výslovně jmenuje; jinak se zeptej. |

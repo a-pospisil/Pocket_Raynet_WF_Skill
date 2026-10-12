@@ -4,6 +4,8 @@ Ověřeno na instanci `evergreen` dne 21. 9. 2026 čtením reálných dat. Pole 
 doplněny 12. 10. 2026 z Adamova manuálu (pole přečtená v UI v Nastavení » Nastavení evidence, klíče ověřené zápisem a čtením
 přes MCP) a z kontroly reálných OP.
 Plný audit: `docs/AUDIT-POCKET-RAYNET.md` v repozitáři.
+Oficiální dokumentace: REST API v2 `https://app.raynet.cz/api/doc/` (443 operací), MCP nástroje `https://app.raynet.cz/api/doc/mcp/`
+(66 nástrojů); v Adamově vaultu převedené do Markdownu (`raw/web/2026-10-12_raynet-*-dokumentace.md`, přehled `wiki/firma/raynet-api.md`).
 
 ## Obsah
 
@@ -33,7 +35,7 @@ Plný audit: `docs/AUDIT-POCKET-RAYNET.md` v repozitáři.
 
 | Co | Hodnota |
 |---|---|
-| Vlastník (`owner`) | **zjistit za běhu**: `user_info` → `username` → `person_list(email=…)` → `id` (Adam = 2) |
+| Vlastník (`owner`) | **zjistit za běhu**: `user_info` → `personId` (Adam = 2, ověřeno 12. 10. 2026) |
 | Uživatelé (id osoby) | Adam Pospíšil 2 · Michal Čakovský 9 · Michal Kutina 10 · Eva Hofmanová 13 · Kateřina Háblová 21 · Martin Fiedor 42 (k 2026-10-12; další přes `person_list`) |
 | `securityLevel` „Sdílená" | 1 |
 | `businessCaseType` „Úvěrový proces" (jediný používaný) | 64; historický typ „Provize“ 188 (Q1 2026) nepoužívat |
@@ -253,7 +255,7 @@ Stav k 2026-10-01 (`raynet://codelist/<entity>`; při chybě id vždy načíst z
 | `person_create` | `lastName` |
 
 `owner` nemá default a neexistuje pro něj lookup nástroj. Skill ho zjistí za běhu z přihlášeného uživatele
-(`user_info` vrátí `username` = e-mail, `person_list(email=…)` vrátí id; ověřeno 1. 10. 2026: adam.pospisil@egfin.cz → 2).
+(`user_info` vrací `username`, `personId`, `fullName` a id i název instance; ověřeno 12. 10. 2026: Adam → `personId` 2).
 Každý kolega má vlastní instanci Herma a zapisuje sám za sebe.
 
 `lead_create` funguje (na rozdíl od fyzické osoby): povinné je jen `topic`, vhodné `firstName`, `lastName`, `leadPerson=true`,
@@ -272,11 +274,11 @@ Z manuálu 12. 10. 2026. Klient je vždy `company` (organizace); jak skill pole 
 | Zdroj kontaktu | `contactSource` | číselník výše |
 | Poznámka | `notice` | HTML; Profil klienta |
 | IČO / DIČ / plátce DPH | `regNumber` / `taxNumber` / `taxPayer` | `taxPayer` = `YES` / `NO` |
-| Adresa | `street`, `city`, `province`, `zipCode`, `country` (ISO, `CZ`), `territory`, **`addressName`** | ⚠️ `addressName` je **povinný, jakmile posíláš jakékoli adresní nebo kontaktní pole** (i jen `phone` nebo `email`); v instanci se používá „Sídlo klienta“ |
+| Adresa | `street`, `city`, `province`, `zipCode`, `country` (ISO, `CZ`), `territory`, **`addressName`** | ⚠️ `addressName` je u `company_create` **povinný, jakmile posíláš jakékoli adresní nebo kontaktní pole**; u `company_update` ho MCP při vynechání doplní ze stávající adresy (dokumentace MCP). V instanci „Sídlo klienta“ |
 | Kontakt | `phone` (Tel 1), `email`, `email2`, `www` | v UI je Tel 1 povinný |
 | Sítě | `facebook`, `instagram`, `linkedin`, `whatsapp`, `tiktok`, `threads`, `skype`, `youtube`, `pinterest`, `twitter` | |
 | Další | `bankAccount`, `legalForm`, `turnover`, `employeesNumber`, `paymentTerm`, `economyActivity`, `companyClassification1-3` | číselníky (id); `bankAccount` jen z dokumentu |
-| **Přes MCP nejde** | logo, typ subjektu (fyzická osoba), jméno a příjmení zvlášť, binární přílohy | jen UI nebo import. Štítky klienta manuál uvádí také jako „nejde přes MCP“, u aktivit štítky fungují `[k ověření u klienta]` |
+| **Přes MCP nejde** | logo, typ subjektu (fyzická osoba), jméno a příjmení zvlášť, binární přílohy, **štítky klienta** | jen UI, import nebo REST API (`person: true`, `/fileUpload` + `/attachment/…`, `/company/{id}/tag/`). `company_create`/`company_update` parametr `tags` nemají; u OP a aktivit štítky fungují |
 
 Výchozí „preference subjektu“ v UI instance je *Fyzická osoba*; přes MCP vznikne vždy organizace, typ se přepíná v UI.
 
@@ -557,8 +559,9 @@ vůbec neukáže (ověřeno 12. 10. 2026).
 **U vlastních polí je to naopak: `null` nebo prázdná hodnota v `customFields` pole smaže** (manuál 12. 10. 2026). Do
 `customFields` proto posílej jen klíče, které opravdu měníš, nikdy celý objekt z `*_get` s prázdnými hodnotami.
 
-**`addressName` je povinný u každého adresního nebo kontaktního pole klienta.** `company_update` jen s `phone` nebo `email`
-bez `addressName` neprojde; v instanci se používá „Sídlo klienta“ (manuál 12. 10. 2026).
+**`addressName` u adres a kontaktů klienta.** `company_create` s jakýmkoli adresním nebo kontaktním polem bez `addressName`
+neprojde. U `company_update` ho MCP podle své dokumentace při vynechání doplní ze stávající adresy; manuál (12. 10. 2026) ho uvádí
+jako povinný vždy, posílej ho proto i tak. V instanci se používá „Sídlo klienta“.
 
 **Povinné v UI ≠ povinné v API.** Formulář vyžaduje u OP `source`, `category`, číslo smlouvy (`cislo_smlo_60eb1`) a typ provize
 (`Provize_dc7d2`), u klienta Tel 1. MCP vyžaduje jen povinná pole z [Povinná pole při zakládání](#povinná-pole-při-zakládání).

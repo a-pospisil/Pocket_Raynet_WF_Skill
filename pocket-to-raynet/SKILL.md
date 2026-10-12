@@ -54,8 +54,7 @@ Platí vždy, bez výjimky. Zdůvodnění: `docs/NAVRH-ZAPISY.md`, kap. 4a.
 ### 0. Zjisti, kdo zapisuje
 
 ```
-user_info()                          → username (e-mail přihlášeného uživatele)
-person_list(email=<username>)        → id = owner pro všechny zápisy
+user_info()                          → personId = owner pro všechny zápisy (ověřeno 12. 10. 2026)
 ```
 
 Vlastník se nikdy nezadává napevno. Každý poradce zapisuje sám za sebe (Adam = 2, ostatní viz `references/raynet-reference.md`).
@@ -128,7 +127,7 @@ chybu párování než nového zájemce: zeptej se, lead nezakládej.
 
 **Založení klienta na výslovný pokyn.** `company_create` vytvoří vždy organizaci. Povinné a výchozí: `name` = „Jméno Příjmení“,
 `role="A_SUBSCRIBER"`, `state="A_POTENTIAL"`, `rating="C"`, `owner` = poradce, který hovor vedl. K tomu, co jistě zaznělo:
-kontakt a adresa (vždy s `addressName`), `contactSource`, tipař (`category`, jen výslovně jmenovaný), vlastní pole a Profil
+kontakt a adresa (u založení vždy s `addressName`), `contactSource`, tipař (`category`, jen výslovně jmenovaný), vlastní pole a Profil
 klienta (krok 11). V souhrnu uveď „v UI přepnout na fyzickou osobu, jméno a příjmení zvlášť“.
 
 **Klient není vždy ten, s kým se mluví.** Hovor s partnerem, rodičem nebo známým patří k tomu, kdo bude dlužníkem.
@@ -343,8 +342,8 @@ Před zápisem `company_get`. Prázdné doplň, existující přepiš jen jistou
 Měsíční příjem ze závislé činnosti je v poli vždy **čistý**. Zazní-li jen hrubý, přepočítej ho na čistý (vzorec v šabloně,
 „Přepočet hrubé mzdy na čistou“) a v náhledu i v profilu ho označ „přepočet z hrubé“; doložená čistá mzda (páska, potvrzení
 o příjmu, výpis) ho později přepíše (Adam, 12. 10. 2026).
-Do `customFields` posílej jen měněné klíče (`null` nebo prázdná hodnota pole smaže). Kontakt nebo adresu vždy s `addressName`
-(stávající, u prázdné „Sídlo klienta“), jinak update neprojde. Po zápisu `company_get` a kontrola, že pole sedí.
+Do `customFields` posílej jen měněné klíče (`null` nebo prázdná hodnota pole smaže). Kontakt nebo adresu posílej s `addressName`
+(stávající, u prázdné „Sídlo klienta“): u založení je povinný, u úpravy ho MCP při vynechání doplní, poslat ho nevadí. Po zápisu `company_get` a kontrola, že pole sedí.
 RČ a číslo účtu jen z dokumentu (tvrdé pravidlo 5). Co MCP neumí (jméno a příjmení zvlášť, titul, datum narození, příznak fyzické osoby), uveď v souhrnu
 jako „doplnit v UI“. Pole, klíče a šablona profilu: `references/sablony-zapisu.md`, „Karta klienta“.
 

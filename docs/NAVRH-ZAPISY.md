@@ -169,9 +169,16 @@ Kladu je postupně v chatu, odpovědi doplním sem.
     Výchozí formát zůstává šablona S / M / L; zda má doslovné shrnutí být nový výchozí formát, je otevřené.
 7s. ✅ **E-mail do chatu na pokyn** (Adam, 12. 10.): když uživatel chce e-mail „sem“, jde do chatu ke zkopírování. Co se
     vyřešilo na místě (faktura zaplacená při schůzce), do e-mailu nepatří. Výchozí místo zůstává popis souhrnného úkolu (7d).
+7t. ✅ **OP zakládat, když je evidentní, že se rovnou řeší případ** (Adam, 12. 10.). Rozšiřuje 1. 10. „běžící žádost bez OP“.
+    Při založení i u existujícího OP se z hovoru doplní prázdná pole OP; výše existujícího OP dál jen na pokyn, fáze jen návrh.
+7u. ✅ **Neznámý volající = lead** potvrzeno (Adam, 12. 10.); klient přes `company_create` jen na výslovný pokyn.
+7v. ✅ **Jeden souhrnný úkol** potvrzen (Adam, 12. 10.), checklist `☐`/`☑` s odškrtáváním: skill odškrtává při dalších bězích
+    a na pokyn v chatu, `deadline` = nejbližší otevřený bod, po odškrtnutí všeho návrh dokončit úkol.
+7w. ✅ **Měsíční příjem ze závislé činnosti je vždy čistý** (Adam, 12. 10.). Hrubý z hovoru se přepočte na čistý, doložená
+    čistá mzda ho později přepíše.
 8. ~~Úkoly pro tým a pro klienta.~~ Vyřešeno pravidlem z 1. 10. (drobnosti do jednoho úkolu, klient do zápisu a e-mailu).
 9. Návrh e-mailu klientovi se shrnutím.
-10. Posun fáze a vyplnění polí OP.
+10. ~~Posun fáze a vyplnění polí OP.~~ Vyřešeno 12. 10. (7t): pole OP u evidentního případu, fáze jen návrh.
 11. Interní poznámky a provize.
 12. Úroveň osobních údajů v zápisu (adresy, rodina, věk).
 13. Kdo skill spouští a kdy.

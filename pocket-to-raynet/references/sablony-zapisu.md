@@ -17,7 +17,7 @@ ukazují jen formát.
 - [Souhrnný úkol a návrh e-mailu](#souhrnný-úkol-a-návrh-e-mailu)
 - [Příprava před schůzkou](#příprava-před-schůzkou)
 - [Karta klienta: maximum údajů](#karta-klienta-maximum-údajů)
-- [Pole OP z hovoru (jen na pokyn)](#pole-op-z-hovoru-jen-na-pokyn)
+- [Pole OP z hovoru](#pole-op-z-hovoru)
 
 ## Zásady
 
@@ -202,18 +202,34 @@ Drobnosti po schůzce jdou do **jednoho úkolu** (pravidlo z 1. 10. 2026, vault 
 úkol má jen věc s vlastním termínem a řešitelem, kterou je potřeba hlídat zvlášť (nabídka před další schůzkou, kontrola za několik
 měsíců). Co dodá klient, patří do zápisu a do návrhu e-mailu, ne do úkolů.
 
-- Název: `<klient> – další kroky po schůzce <datum>`, termín = nejbližší termín z checklistu, řešitel = vlastník OP.
+- Název: `<klient> – další kroky po schůzce <datum>`, termín (`deadline`) = termín nejbližšího **otevřeného** bodu, řešitel = vlastník OP.
 - Popis:
 
 ```html
-<p><b>Checklist</b></p>
+<p><b>Checklist</b> <i>(☐ otevřené · ☑ hotovo)</i></p>
 <ul>
-<li>☐ Adam: potvrdit odhadce · dnes</li>
-<li>☐ Eva: bonita v kalkulaci KB a ČSOB · do 2. 10.</li>
+<li>☑ Adam · potvrdit odhadce · 1. 10. · <i>hotovo 1. 10.</i></li>
+<li>☐ Eva · bonita v kalkulaci KB a ČSOB · do 2. 10.</li>
+<li>☐ Adam · poslat nabídku 2 bank · do 6. 10.</li>
 </ul>
 <p><b>Návrh e-mailu klientovi</b> <i>(odeslat z Raynetu)</i></p>
 <p>Dobrý den, …</p>
 ```
+
+### Odškrtávání checklistu
+
+Raynet nemá v úkolu podúkoly ani zaškrtávací políčka (úkol = jeden zadavatel a jeden řešitel). Checklist je proto text se znaky
+`☐` a `☑`, který se dá číst v UI, v mobilu i v seznamu úkolů. Odškrtávání:
+
+| Kdo | Jak |
+|---|---|
+| **Skill při dalším běhu ke klientovi** | načte otevřené úkoly se štítkem „AI zápis“ (`task_list(companyId=<id>, tags="AI zápis")`, stav NEW nebo SCHEDULED) a body, které podle nového hovoru, e-mailu nebo zápisu kolegy evidentně proběhly, navrhne v náhledu: `☐ → ☑ … · hotovo <datum>` |
+| **Uživatel v chatu** | „odškrtni odhadce u Nováka“ → skill najde úkol, ukáže změnu a po potvrzení ji zapíše |
+| **Uživatel v Raynetu** | v Zadání úkolu přepíše `☐` na `☑`; celý úkol uzavře „Mám hotovo“ |
+
+Po každém odškrtnutí skill posune `deadline` na nejbližší otevřený bod, ať Raynet upozorní na další krok. Když jsou odškrtnuté
+všechny body, navrhne úkol dokončit (`status="COMPLETED"`, do `solution` jedna věta). Nové body z dalšího hovoru ke stejnému
+klientovi a OP přidá do existujícího otevřeného úkolu, nový nezakládá. Splněné body zůstávají v seznamu (stopa, kdo co kdy udělal).
 
 Návrh e-mailu se přidává po úvodní schůzce, po prezentaci nabídky a vždy, když v hovoru zazní „pošlu vám shrnutí / seznam podkladů“.
 E-mail je pro klienta: bez interních poznámek, bez provizí, bez bonity po bankách (jen závěr), s tím, co potřebujeme a do kdy.
@@ -270,7 +286,7 @@ Do `customFields` posílej **jen klíče, které měníš** (`null` nebo prázdn
 | zúžené SJM | `Zuzeni_SJ_f0b36` | `Ano` / `Ne` |
 | počet vyživovaných dětí | `Pocet_deti_cf874` | číslo |
 | banka hlavního účtu | `hlavni_bez_5fef9` | `ČSOB` · `KB` · `ČS` · `RB` · `Fio` · `Airbank` · `mBank` |
-| čistý měsíční příjem ze závislé činnosti | `mesicni_pr_0a298` | číslo, např. `65000`. **Vždy čistý** (Adam, 12. 10. 2026): hrubý sem nepatří ani přepočtený, zazní-li jen hrubý, čistý do „Doptat“ |
+| čistý měsíční příjem ze závislé činnosti | `mesicni_pr_0a298` | číslo, např. `65000`. **Vždy čistý.** Zazní-li jen hrubý, přepočítej ho (níže) a v náhledu i profilu označ „přepočet z hrubé“; doložená čistá mzda ho později přepíše (Adam, 12. 10. 2026) |
 | zaměstnavatel · pozice | `zamestnava_ffa65` · `pracovni_p_f7e4d` | text |
 | nástup k zaměstnavateli | `nastup_fbbb1` | datum `"2019-03-01"` |
 | druh pracovního poměru | `Druh_fcd16` | `HPP` · `DPČ` · `DPP` |
@@ -293,6 +309,26 @@ jsou známé všechny úvěry. Stejné údaje patří i do Profilu klienta (Osta
 `Radek_74_z_a6a87` (KB), `mBank_9af71`, `VysledekCS_a6436`, `Alternativ_b3c97`. **Nevyplňovat:** `Doplnujici_a57c0`
 (profil je v `notice`), `Bety_8f936` (význam neznámý). **Pole typu soubor** (DPFO, DPPO, výkazy, rozvahy, Přehled úvěrů) jen čti:
 říkají, co už v CRM je (`podklady.md`); nahrává je člověk v UI.
+
+### Přepočet hrubé mzdy na čistou (2026)
+
+Pro pole `mesicni_pr_0a298`, když klient řekne jen hrubou mzdu. Platí pro hlavní pracovní poměr s podepsaným prohlášením
+poplatníka; u DPP, DPČ, druhého zaměstnání a mzdy v cizí měně přepočet nedělej a čistý příjem dej do „Doptat“.
+
+```
+H  = hrubá měsíční mzda
+SP = 7,1 % × H, zaokrouhleno na Kč nahoru            (sociální: důchodové 6,5 % + nemocenské 0,6 %)
+ZP = 4,5 % × H, zaokrouhleno na Kč nahoru            (zdravotní)
+Z  = H zaokrouhlená na celé stokoruny nahoru         (základ zálohy)
+D  = 15 % × min(Z; 146 901) + 23 % × max(0; Z − 146 901), na Kč nahoru
+     (146 901 = 3 × průměrná mzda 2026 48 967 Kč)
+DS = max(0; D − 2 570)                               (sleva na poplatníka, měsíčně)
+čistá = H − SP − ZP − DS
+```
+
+Příklad: H 50 000 → SP 3 550 · ZP 2 250 · D 7 500 · DS 4 930 → **čistá 39 270**. Daňové zvýhodnění na děti
+(1. dítě 1 267, 2. dítě 1 860, 3. a další 2 320 Kč měsíčně) přičti, jen když klient řekne, že ho uplatňuje on; jinak ho vynech
+a do „Doptat“ dej „kdo uplatňuje děti“. V náhledu ukaž H, SP, ZP, DS a výsledek, ať jde výpočet zkontrolovat.
 
 ### Profil klienta (`notice`)
 
@@ -319,10 +355,11 @@ v Raynetu“).
 
 Prázdný řádek vynech. Údaje o případu (záměr, bonita, strategie konkrétního úvěru) sem nepatří, jsou v kartě OP.
 
-## Pole OP z hovoru (jen na pokyn)
+## Pole OP z hovoru
 
-Ve výchozím běhu skill pole OP nemění, jen navrhne posun fáze (Adam, 1. 10. 2026). Tato tabulka platí, když uživatel výslovně
-řekne „doplň i pole OP“, a pro **nový OP** (výjimka v kroku 6), kde se při založení vyplní to, co jistě zaznělo.
+Platí, když hovor **evidentně řeší konkrétní případ** (definice v `SKILL.md`, krok 6; Adam, 12. 10. 2026): u nového OP se při
+založení vyplní, co jistě zaznělo, u existujícího OP se doplní prázdná pole. Vyplněnou hodnotu skill přepíše jen jistou novou
+hodnotou jako „staré → nové“, výši (`totalAmount`) existujícího OP jen na pokyn. Fáze jde vždy jen jako návrh.
 
 | Co zazní | Pole | Zápis |
 |---|---|---|

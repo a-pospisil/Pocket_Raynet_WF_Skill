@@ -54,7 +54,7 @@ Tyhle hranice nejsou opatrnost, ale technická omezení MCP ověřená auditem:
 | **Nezaloží duplicitu k naplánované aktivitě** | Naplánovaný hovor nebo schůzku z téhož dne, které proběhly v jiný čas, dokončí. Aktivity z jiných dní nechá být. |
 | **Nezruší schůzku** | Zrušení v Raynetu ji smaže i v Google kalendáři. Duplicitní nebo testovací telefonát zruší jen na výslovný pokyn. |
 | **Nezapíše zápis do Události** | Událost nemá v UI pole „Výsledek“, zápis by nebyl vidět. Navrhne převod na Schůzku v UI, nebo na pokyn založí novou Schůzku. |
-| **Nezmění pole OP bez pokynu** | Navrhne jen posun fáze. Výši a další pole OP vyplní jen na výslovný pokyn. |
+| **Nemění OP naslepo** | OP založí a jeho prázdná pole doplní, jen když hovor evidentně řeší konkrétní případ, vždy po potvrzení. Fázi jen navrhne, výši existujícího OP změní jen na pokyn. |
 | **Nepřejmenuje mluvčí v Pocketu** | MCP Pocketu to neumí. Skill napíše, koho přejmenovat, a opraví to v zápisu podle přepisu. |
 | **Nenahraje přílohu** | Jen odkaz URL. Pocket audio navíc expiruje po hodině. |
 | **Nezapíše rodné číslo ani číslo účtu z hovoru** | Redakce probíhá automaticky v převodním skriptu. Do karty klienta jen z dokumentu. |
@@ -156,3 +156,5 @@ ověřené zápisem a čtením přes MCP) a kontroly 119 reálných OP: standard
 klienta i OP, přesné hodnoty roletek a formáty (`references/raynet-reference.md`). Skill podle toho plní víc vlastních
 polí klienta (mapování „co zaznělo → klíč“ v šabloně karty klienta), čte pole typu Soubor jako přehled dodaných dokladů
 a na výslovný pokyn vyplní i pole OP.
+Podle Adamových rozhodnutí z 12. 10. 2026 skill zakládá OP, když hovor evidentně řeší konkrétní případ, přepočítá hrubou mzdu na
+čistou a souhrnný úkol vede jako checklist `☐`/`☑`, který při dalších bězích odškrtává a posouvá termín úkolu na další otevřený bod.

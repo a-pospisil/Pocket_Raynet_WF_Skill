@@ -134,7 +134,7 @@ chybu, která vyjmenuje platná — toho se dá využít místo hádání.
 
 ### Založení OP
 
-OP skill zakládá jen ve výjimce z kroku 6 (běžící žádost u banky bez OP), vždy po potvrzení:
+OP skill navrhne založit, když hovor evidentně řeší konkrétní případ a klient pro něj OP nemá (krok 6, Adam 12. 10. 2026), vždy po potvrzení:
 
 ```
 businessCase_create(
@@ -337,7 +337,7 @@ soubor, MCP ho nevyplní; *ne* = nevyplňovat.
 
 | Popisek | Typ | Klíč | Skill |
 |---|---|---|---|
-| měsíční příjem | číslo | `mesicni_pr_0a298` | hovor; **vždy čistý** měsíční příjem ze závislé činnosti (Adam, 12. 10. 2026). Zazní-li jen hrubý, pole nevyplňuj a čistý dej do Doptat |
+| měsíční příjem | číslo | `mesicni_pr_0a298` | hovor; **vždy čistý** měsíční příjem ze závislé činnosti. Zazní-li hrubý, přepočet na čistý (`sablony-zapisu.md`), doložená hodnota ho přepíše (Adam, 12. 10. 2026) |
 | zaměstnavatel | text | `zamestnava_ffa65` | hovor |
 | pracovní pozice | text | `pracovni_p_f7e4d` | hovor |
 | nástup | datum | `nastup_fbbb1` | hovor (měsíc a rok → 1. den měsíce; jen rok → do profilu, pole prázdné) |
@@ -391,8 +391,8 @@ alternativním výpočtem) uznává klientovi jako příjem z podnikání. Nikdy
 
 ### Obchodní případ (`businessCase`)
 
-Skill pole OP ve výchozím běhu **nemění** (Adam, 1. 10. 2026: jen návrh posunu fáze), ale čte je pro kartu OP a bonitu.
-Na výslovný pokyn je vyplní podle `sablony-zapisu.md`, „Pole OP z hovoru“. Klíč `?` = pole zatím nikde vyplněné, klíč
+Skill pole OP čte pro kartu OP a bonitu. Když hovor evidentně řeší případ, doplní prázdná pole podle `sablony-zapisu.md`,
+„Pole OP z hovoru“ (Adam, 12. 10. 2026); výši existujícího OP mění jen na pokyn, fázi jen navrhuje. Klíč `?` = pole zatím nikde vyplněné, klíč
 neznámý (zjistit postupem výše). Sloupec „Vyplněno“ = počet OP s vyplněným polem ve vzorku 119 OP k 2026-10-12.
 
 **Hypotéky**

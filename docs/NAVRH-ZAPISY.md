@@ -117,6 +117,12 @@ DP 2025 §9: ř. 201 = 180 000 · ř. 202 = 196 000 (odpisy 90 000, úroky 98 00
    nebo téma nesedí, skill se zeptá.
 3. **Při jakékoli nejistotě se skill zeptá** (klient, OP, aktivita k dokončení, posun fáze, rozdělení bankéřského hovoru).
    Raději jedna otázka navíc než zápis na špatné místo, protože přes MCP nejde nic smazat.
+4. **Zápis nikdy do Události (Adam, 12. 10.).** Při prvním ostrém zápisu ke klientovi skončil zápis v `solution` naplánované
+   Události. Událost nemá v rozhraní pole „Výsledek“, takže zápis na kartě klienta nebyl vidět a Adam musel aktivitu ručně
+   přehodit na Schůzku. Převod vytvořil novou Schůzku s novým id a Událost zanikla (`event_get` pak vracel 502). Pravidlo:
+   zápis jen do Schůzky nebo Telefonátu; u naplánované Události skill navrhne převod v UI (výchozí), nebo na pokyn založí novou
+   Schůzku a Událost nechá k ručnímu smazání (SKILL.md, tvrdé pravidlo 7, větev A2). Naplánované schůzky z kalendáře bývají
+   Události, nejspíš ze synchronizace s Google kalendářem `[k ověření]`.
 
 ## 5. Otevřené otázky pro Adama
 
@@ -158,6 +164,11 @@ Kladu je postupně v chatu, odpovědi doplním sem.
     z vaultu (`wiki/metodiky/`), běží tedy jen u Adama.
 7p. ✅ **Štítek „AI zápis“** na všech aktivitách ze skillu (Adam, 1. 10.).
 7q. ✅ **Ruční text v kartě OP se zachová** pod nadpisem „Původní poznámky“, strukturovaná karta jde nad něj (Adam, 1. 10.).
+7r. ✅ **Režim „doslovně Pocket“ na pokyn** (Adam, 12. 10.: „přepiš zápis přesně z Pocketu, nic neměň“): do výsledku jde AI shrnutí
+    Pocketu beze změny textu, jen převod Markdown → HTML se strojovou kontrolou shody (`md_to_raynet_html.py --check`).
+    Výchozí formát zůstává šablona S / M / L; zda má doslovné shrnutí být nový výchozí formát, je otevřené.
+7s. ✅ **E-mail do chatu na pokyn** (Adam, 12. 10.): když uživatel chce e-mail „sem“, jde do chatu ke zkopírování. Co se
+    vyřešilo na místě (faktura zaplacená při schůzce), do e-mailu nepatří. Výchozí místo zůstává popis souhrnného úkolu (7d).
 8. ~~Úkoly pro tým a pro klienta.~~ Vyřešeno pravidlem z 1. 10. (drobnosti do jednoho úkolu, klient do zápisu a e-mailu).
 9. Návrh e-mailu klientovi se shrnutím.
 10. Posun fáze a vyplnění polí OP.

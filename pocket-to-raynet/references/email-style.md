@@ -102,7 +102,7 @@ ve 3. osobě a pravidlo se jich netýká. Omylem tykat klientovi je chyba, ktero
 |---|---|---|---|
 | **V1 vykání + příjmení** (výchozí u klientů) | „Dobrý den, pane Nováku,“ / „Dobrý den, paní Nováková,“ | Vy, Vás, Vám, Váš **s velkým V**; máte, pošlete, dejte vědět | „S pozdravem“ / „Děkuji a přeji hezký den“ |
 | **V2 vykání + křestní jméno** (bližší klienti) | „Dobrý den, Petře,“ | stejné jako V1, velké V | stejné jako V1 |
-| **T tykání** (známí, kolegové, partneři, část bankéřů) | „Ahoj Petře,“ | ty, ti, tebe, tvůj malým (`[odhad]`, upřesní naučená pravidla); máš, pošli, dej vědět | „Díky“ / „Díky a měj se“ (`[odhad]`) |
+| **T tykání** (známí, kolegové, partneři, část bankéřů) | „Ahoj Petře,“ | ty, ti, tebe, tvůj malým (`[odhad]`, upřesní naučená pravidla); máš, pošli, dej vědět | „Díky, Adam“ nebo „Měj se“ (Adam, 12. 10. 2026); u kolegy jeho křestní jméno |
 
 Jméno v oslovení je vždy v 5. pádě (Petře, Honzo, pane Nováku, paní Nováková). Tvar jména ověř v Raynetu, ne v Pocketu.
 

@@ -24,7 +24,7 @@ TYKANI = """Ahoj Petře,
 posílám ti shrnutí. Mrkni na varianty a dej vědět, která ti víc sedí.
 Kdyby něco, zavolej.
 
-Díky a měj se
+Díky, Adam
 """
 
 

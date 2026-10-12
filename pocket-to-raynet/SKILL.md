@@ -11,6 +11,13 @@ description: >-
   nebo „připrav mi dnešní schůzky". Spusť i tehdy, když uživatel nezmíní Pocket ani Raynet
   jménem, ale jde o převod nahraného hovoru na CRM záznam, o follow-up z hovoru,
   o dohledání, jestli už je hovor v CRM zapsaný, nebo o přípravu na schůzku s klientem.
+compatibility: >-
+  Vyžaduje MCP servery Hey Pocket (plán Pro) a Raynet CRM, a Python 3 pro skripty
+  (jen standardní knihovna).
+metadata:
+  version: "0.3.0"
+  hermes:
+    tags: [crm, raynet, pocket, hypoteky, email]
 ---
 
 # Pocket → Raynet
@@ -95,13 +102,28 @@ Klienti jsou záznamy `company`, i fyzické osoby. Hledej v tomto pořadí a **v
 3. `company_list(fulltext=…)`: jen celá slova a prefixy.
 4. `lead_list(…)`: nový zájemce bývá nejdřív lead.
 
-Pocket komolí jména (`Novak`/`Novák`/`Nowak`, `Dvořáková`/`Dvořáčková`; jména jsou ilustrační). Zkoušej varianty, jméno z přepisu je nápověda, ne klíč.
+Pocket komolí jména (`Novak`/`Novák`/`Nowak`, `Dvořáková`/`Dvořáčková`; jména jsou ilustrační) a cizí jména bývají v CRM
+zapsaná foneticky (`Schneider` → `Šnajdr`). Filtr `name` je podřetězec, ale **rozlišuje diakritiku** (ověřeno: příjmení bez háčku
+klienta s háčkem nenajde) a přepis bývá v pádě („s Honzou Novákem"). Jméno z přepisu je nápověda, ne klíč. Na hledání použij
+`scripts/match_name.py`:
+
+```bash
+python3 scripts/match_name.py variants "Honzou Novákem"          # hledací výrazy pro company_list(name=…)
+python3 scripts/match_name.py score "Honzou Novákem" odp1.json odp2.json   # seřadí kandidáty z odpovědí
+```
+
+`score` porovnává foneticky, bez diakritiky a titulů, v libovolném pořadí slov a zná domácké podoby (Honza = Jan). Jeho verdikt
+(`jistý` / `pravděpodobný` / `nejistý` / `žádný`) se týká **jen jména**, tedy jednoho znaku ze dvou: druhý znak (e-mail nebo telefon)
+ověř zvlášť (tvrdé pravidlo 1). U klienta vedeného v CRM dvakrát vrátí `nejistý` a nehádá.
 
 | Výsledek | Co udělat |
 |---|---|
 | právě 1 zásah se dvěma shodnými znaky | pokračuj |
 | víc kandidátů nebo jen jeden znak | **zastav**, vypiš kandidáty (id, jméno, e-mail, vlastník), nech vybrat |
 | 0 zásahů | navrhni **lead** (`lead_create`: `topic`, `firstName`, `lastName`, `leadPerson=true`, kontakt, zdroj). Po potvrzení založ a zápis naváž na lead. Klienta (fyzickou osobu) přes MCP nezakládej. |
+
+Když hovor zjevně navazuje na rozjednaný případ (zmiňuje OP, dřívější podklady, předchozí schůzku), 0 zásahů znamená spíš
+chybu párování než nového zájemce: zeptej se, lead nezakládej.
 
 **Klient není vždy ten, s kým se mluví.** Hovor s partnerem, rodičem nebo známým patří k tomu, kdo bude dlužníkem.
 Mluvčího navaž přes `participants`.
@@ -248,6 +270,8 @@ zápis provede. Token platí 60 s a nikdy se nevymýšlí.
 `status=COMPLETED` nastaví `completed` na `scheduledTill`. Když posíláš skutečný konec ve `scheduledTill`, sedí; jinak hned potom
 `<typ>_update(id, completed=<konec>)` bez `status`. Po zápisu výsledek ověř přes `activity_list(companyId=<id>)`.
 
+Větev A přepisuje existující záznam: hodnoty z `<typ>_get` ulož do audit logu jako `before` (viz [Audit log](#audit-log)).
+
 **Větev A2: naplánovaná Událost** (tvrdé pravidlo 7). Typ aktivity přes MCP změnit nejde. Do Události **nic nezapisuj**
 a v náhledu nabídni (formát v kroku 8):
 
@@ -311,6 +335,15 @@ Adam ponechal navržený úkol jen u 1 ze 7 hovorů.
 - Návrh e-mailu klientovi patří do popisu úkolu po úvodní schůzce, po nabídce a vždy, když v hovoru zazní „pošlu vám…“.
   Když uživatel chce e-mail „sem do chatu“, dej ho do chatu ke zkopírování (Adam, 12. 10. 2026). Co se vyřešilo na místě
   (např. faktura zaplacená při schůzce), do e-mailu nepiš.
+- **Návrh e-mailu** piš podle `references/email-style.md` (stavba a formulace z Adamových e-mailů a pravidla naučená z jeho úprav).
+  Podklady chtěj jen ty, které chybí: co je potřeba podle typu případu a kde zjistit, co už přišlo, je v `references/podklady.md`.
+  Co si poradce zajistí sám (LV, kupní smlouva z katastru), po klientovi nechtěj.
+- **Adresu příjemce ber z Raynetu**, ne z Pocketu: Pocket v `payload.email.to` adresy vymýšlí nebo místo adresy dá jen jméno.
+- Když uživatel chce koncept **do pošty**, vyrob `.eml` přes `scripts/make_email_draft.py`. Hlavička `X-Unsent: 1` zajistí, že se
+  v Apple Mail otevře jako koncept k úpravě, ne jako přijatá zpráva jen pro čtení. Nic se neodesílá. Podpis je
+  v `assets/signature.txt` (Adamův; kolega si ho nahradí svým).
+- Když uživatel návrh upraví a řekne co (nebo vloží finální verzi), připiš z rozdílu pravidlo do *Naučená pravidla*
+  v `email-style.md`.
 - Action items z Pocketu (`search_pocket_actionitems`, filtr na `recordingId`) slouč do checklistu. Po zápisu je v Pocketu uzavři
   (`update_pocket_actionitem(status="COMPLETED")`; priorita se při zápisu píše velkými písmeny).
 
@@ -324,6 +357,7 @@ Nic jiného na OP neměň. Výjimka: k návrhu **Prohry** (fáze 5) patří i ka
 ### 14. Shrň, co vzniklo
 
 Tabulka: co bylo zapsáno nebo dokončeno (id), karta OP, karta klienta, úkol, fáze, co přeskočeno a proč, co zůstalo na uživateli.
+V prostředí bez trvalého disku (chat na claude.ai) sem vypiš i řádky audit logu, jinak se ztratí.
 
 ## Příprava před schůzkou (ranní běh)
 
@@ -355,6 +389,27 @@ Hermes ráno, nebo pokyn „připrav dnešní schůzky":
 
 Rate limit je 24 000 requestů denně pro MCP. `rate_limit_status` se do limitu nepočítá.
 
+## Audit log
+
+Každou akci zapiš do logu: zápis, dokončení, přeskočení, eskalaci i zamítnutý návrh. Štítek `AI zápis` říká, *že* záznam vznikl
+ze skillu; log říká, *co* se kdy změnilo a jak to vypadalo předtím. Přes MCP neexistuje undo, takže u přepisu je uložený původní
+stav jediná cesta zpět.
+
+```bash
+echo '{"action": "complete_activity", "outcome": "confirmed", "entity": "meeting", "entity_id": 12345,
+       "client_id": 999, "recording_id": "…", "before": {…}, "after": {…}}' | python3 scripts/audit_log.py append
+```
+
+| Pole | Hodnoty |
+|---|---|
+| `action` | `create_activity`, `complete_activity`, `update_activity`, `create_task`, `create_lead`, `create_business_case`, `update_business_case`, `update_company`, `draft_email`, `complete_action_item`, `skip`, `escalate` |
+| `outcome` | `confirmed` · `edited` (uživatel v náhledu něco opravil) · `rejected` · `auto` · `skipped` |
+| `before` | stav polí před změnou, **povinný u přepisů** (`complete_activity`, `update_*`): bez něj skript zápis odmítne |
+
+Log je v `~/.pocket-to-raynet/audit.jsonl` (nebo `$POCKET_RAYNET_LOG`), mimo repozitář, protože obsahuje jména klientů.
+`audit_log.py stats` ukáže u každého typu akce podíl návrhů potvrzených beze změny. Je to podklad, kdyby se jednou mělo
+potvrzování někde zjednodušit; tvrdé pravidlo 6 tím neplatí o nic méně a rozhoduje jen uživatel.
+
 ## Reference
 
 Načti podle potřeby:
@@ -365,5 +420,10 @@ Načti podle potřeby:
   vlastní pole, pasti (completed, řešitel úkolu, Google kalendář).
 - **`references/pocket-reference.md`**: tvary odpovědí Pocketu, formáty `recordingId`, limity action items.
 - **`references/html-formatting.md`**: co Raynet v HTML polích uloží (tabulky a `<pre>` ne).
+- **`references/email-style.md`**: jak Adam píše e-maily, včetně pravidel naučených z jeho úprav. Otevři před návrhem e-mailu.
+- **`references/podklady.md`**: jaké podklady chtít podle typu případu a kde zjistit, co už přišlo.
 - **`docs/NAVRH-ZAPISY.md`** (v repozitáři): rozhodnutí Adama a jejich důvody. **`docs/RAYNET-OPTIMALIZACE.md`**: doporučené
   nastavení Raynetu.
+
+Skripty ve `scripts/` potřebují jen Python 3 se standardní knihovnou: `match_name.py` (párování jmen), `md_to_raynet_html.py`
+(Markdown → HTML, redakce), `make_email_draft.py` (koncept e-mailu), `audit_log.py` (audit log).

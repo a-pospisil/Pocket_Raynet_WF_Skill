@@ -8,6 +8,8 @@ Plný audit: `docs/AUDIT-POCKET-RAYNET.md` v repozitáři.
 - [Konstanty](#konstanty)
 - [Typy aktivit](#typy-aktivit)
 - [Stavy aktivit](#stavy-aktivit)
+- [Založení leadu](#založení-leadu)
+- [Soukromé aktivity](#soukromé-aktivity)
 - [Fáze obchodního případu](#fáze-obchodního-případu)
 - [Kategorie aktivit](#kategorie-aktivit)
 - [Číselníky klienta a prohry](#číselníky-klienta-a-prohry)
@@ -101,10 +103,77 @@ Uzavřené fáze (dohledány na reálných OP):
 Platná id celkem: 1–8, 10–14. Názvy 12, 13, 14 zůstávají neověřené. Neplatné id vrátí
 chybu, která vyjmenuje platná — toho se dá využít místo hádání.
 
+### Kategorie OP
+
+`raynet://codelist/businessCaseCategory`:
+
+| id | Kategorie |
+|---|---|
+| 116 | hypoteční úvěr |
+| 184 | Podnikatelský úvěr |
+| 189 | Spotřebitelský úvěr - neúčelový |
+| 169 | úvěr ze stavebního spoření |
+| 118 | investice |
+| 119 | životní pojištění |
+| 117 | pojištění vozidel |
+| 147 | pojištění majetku |
+| 148 | pojištění odpovědnosti |
+| 149 | penzijní spoření |
+| 150 | stavební spoření |
+
+### Založení OP
+
+OP skill zakládá jen ve výjimce z kroku 6 (běžící žádost u banky bez OP), vždy po potvrzení:
+
+```
+businessCase_create(
+  name             = "<banka/produkt> – <popis>",  # OP se jmenují podle banky a produktu
+  company          = <clientId>,                    # povinné, OP bez klienta nejde
+  businessCaseType = 64,                            # Úvěrový proces, jediný typ
+  category         = <viz Kategorie OP>,
+  businessCasePhase= <id fáze>,                     # u běžící žádosti typicky 2 „Podaná žádost + EPP 2.0"
+  totalAmount      = <výše>,                        # a stejná částka do vlastního pole vyse_uveru
+  customFields     = {producent: <banka>, vyse_uveru: <výše>}   # klíče viz Vlastní pole
+)
+```
+
+Výši neznáš → zeptej se. `status` se z fáze odvozuje a nastavit přímo nejde.
+
+### Automatika při založení OP
+
+Založení OP spustí v Raynetu automatiku (`createdBy: SYSTEM_USER`), která ve stejnou
+minutu vytvoří dva úkoly navázané na nový OP:
+
+- `Zaslat nabídku_ <název OP>` — priorita `CRITICAL`
+- `EPP 2 - připravit k žádosti <klient> <kód OP> <název OP>`
+
+Ověřeno na OP-26-0462 (18. 9.) a OP-26-0480 (22. 9.). Skill tyhle úkoly nezakládá
+ani do souhrnného úkolu nepřebírá — vznikly by dvakrát.
+
+### Názvy OP
+
 **Případy se jmenují podle banky a produktu**, ne podle klienta — „Moneta SBL",
 „Podnikatelský úvěr Moneta – nemovitost 2–3 mil. Kč". Stejný název se opakuje
 u různých klientů (11 OP s „Moneta" v názvu napříč různými firmami), takže název
 sám o sobě klienta neurčuje.
+
+## Založení leadu
+
+Povinná a vhodná pole jsou v [Povinná pole při zakládání](#povinná-pole-při-zakládání), zdroje kontaktu
+v [Číselníky klienta a prohry](#číselníky-klienta-a-prohry). Navíc:
+
+- `owner` z kroku 0 skillu, nikdy napevno.
+- `leadCategory` (`raynet://codelist/leadCategory`) jsou jména poradců a tipařů (např. 195 Bez tipaře) — stejná logika jako
+  `category` u klienta: kdo dostane podíl na provizi. Jen výslovně jmenovaný tipař, jinak prázdné nebo se zeptej.
+- `priority`: `ELeadPriority` = `MINOR` / `DEFAULT` / `CRITICAL`.
+- Klient z leadu vznikne **převodem v Raynet UI**. `lead_convert` přes MCP jen napojí lead na už existující firmu, osobu nebo OP
+  a nic nezakládá. Hovor mezitím zapiš k leadu: `phonecall_create(lead=<id>, …)`.
+
+## Soukromé aktivity
+
+Skill je nezakládá: osobní hovory do Raynetu nepatří (rozhodnutí 1. 10. 2026, `docs/NAVRH-ZAPISY.md`). Kdyby se to změnilo,
+ustálená podoba v datech je `personal: true`, `category` 112 „soukromá aktivita", bez `company`, bez `description`
+i `solution`, krátký neutrální název. `securityLevel` zůstává 1 „Sdílená" — záznam vidí celý tým.
 
 ## Kategorie aktivit
 
@@ -262,6 +331,15 @@ záznamu v celé bázi. Jako indikátor typu nepoužitelné.
 
 Proto se páruje **e-mail + příjmení**, ne jedním klíčem.
 
+**`name` filtr rozlišuje diakritiku.** Je to substring bez ohledu na velikost písmen,
+ale příjmení bez háčku nenajde klienta, který ho má s háčkem (ověřeno na skutečném klientovi: dotaz vrátil jen jeho
+firmu, zapsanou bez diakritiky; ilustračně `Capek` nenajde `Milan Čápek`, jen `Capek Invest s.r.o.`). Na hledání podle jména z přepisu proto použij
+`scripts/match_name.py variants`, který generuje i varianty s háčkem a bez něj.
+
+**Cizí jména bývají zapsaná foneticky.** Klient, kterého uživatel zná v německém pravopisu (ilustračně `Schneider`),
+je v CRM zapsaný foneticky (`Šnajdr`). Přímé hledání originálního pravopisu nenajde nic a prefix originálu (`Sch`) také ne.
+`scripts/match_name.py variants` proto přidá i český fonetický přepis (`Šnajder` → prefix `Šna`), který zápis najde.
+
 **`fulltext`** matchuje celá slova a prefixy, **ne libovolný substring**. Číselné
 tokeny funguje (test `"2856"` → 2 zásahy). Zásah může přijít z nečekaného pole.
 Na konkrétní pole je spolehlivější `name`, `email`, `regNumber`.
@@ -296,9 +374,10 @@ Tagy se reálně používají: 450 záznamů nese `Broker Trust`.
   REST API to umí (`PUT /company/` s `person=true`, `firstName`, `lastName`), MCP ne.
 - ❌ **Externí ID** (`extIds`, až 10 na záznam, např. `pocket:<recordingId>`) — umí jen REST API (`/{entity}/{id}/extId/`).
   Byl by to nejspolehlivější klíč proti duplicitám, přes MCP zatím nejde.
-- ❌ **Založit e-mail nebo dopis jako aktivitu.** Feed `activity_list` je vrací
-  (`_entityName: "Email"`), ale `email_*` ani `letter_*` nástroje neexistují
-  a `entityType` připouští jen `task`, `meeting`, `event`, `phonecall`.
+- ❌ **Založit e-mail nebo dopis jako aktivitu.** Číst je jde (od 10/2026): `email_list` a `letter_list` vrací
+  přehled bez těla, `email_get` a `letter_get` detail s tělem. `email_list` u e-mailů přijatých nebo odeslaných přes
+  CRM inbox vrací i `from` a `recipients` (u IMAP importů jsou prázdné) a filtruje podle `completedFrom`/`completedTill`,
+  takže najde i přijaté e-maily, které nemají plánovaný čas. Přílohy nástroje nevracejí.
 - ❌ **Generický `activity_get`** — detail se čte podle subtypu.
 - ❌ **Změnit typ aktivity** (Událost → Schůzka) — jen ručně v UI, převod vytvoří nový záznam s novým id.
 - ❌ **Nahrát binární přílohu** — jen `attachmentLink` (URL) nebo `attachmentFolderId`.

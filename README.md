@@ -47,7 +47,9 @@ Tyhle hranice nejsou opatrnost, ale technická omezení MCP ověřená auditem:
 | | Proč |
 |---|---|
 | **Nezaloží klienta** | `company_create` umí vytvořit jen organizaci, ne fyzickou osobu. Neznámý volající se založí jako **lead**, klienta zakládá člověk v UI. |
-| **Nezaloží e-mail ani dopis** | MCP to neumí. Návrh e-mailu klientovi je v popisu souhrnného úkolu. |
+| **Nezaloží e-mail ani dopis** | MCP je umí jen číst. Návrh e-mailu klientovi je v popisu souhrnného úkolu, na pokyn v chatu nebo jako koncept do pošty (`.eml`). |
+| **Neodešle e-mail** | Jen připraví návrh. Odeslání je vždy na člověku. |
+| **Nepřepíše záznam beze stopy** | Každý přepis uloží do audit logu původní stav — přes MCP jiná cesta zpět není. |
 | **Nezapíše pod nejistého klienta** | Klient musí sedět ve dvou znacích, jinak se ptá. |
 | **Nezaloží duplicitu k naplánované aktivitě** | Naplánovaný hovor nebo schůzku z téhož dne, které proběhly v jiný čas, dokončí. Aktivity z jiných dní nechá být. |
 | **Nezruší schůzku** | Zrušení v Raynetu ji smaže i v Google kalendáři. Duplicitní nebo testovací telefonát zruší jen na výslovný pokyn. |
@@ -68,15 +70,20 @@ pocket-to-raynet/
 │   ├── sablony-zapisu.md           # šablony S / M / L, karta OP, bonita, úkol, příprava
 │   ├── raynet-reference.md         # uživatelé, číselníky, vlastní pole, pasti
 │   ├── pocket-reference.md         # tvary odpovědí, formáty id, limity
-│   └── html-formatting.md          # co Raynet v HTML polích unese
-└── scripts/
-    └── md_to_raynet_html.py        # Pocket Summary → HTML pro Raynet
+│   ├── html-formatting.md          # co Raynet v HTML polích unese
+│   ├── email-style.md              # jak Adam píše e-maily + naučená pravidla
+│   └── podklady.md                 # jaké podklady chtít podle případu, kde zjistit, co přišlo
+├── scripts/                        # viz Nástroje
+└── assets/
+    └── signature.txt               # podpis e-mailů (Adamův; kolega si nahradí svým)
 
 docs/
 ├── AUDIT-POCKET-RAYNET.md          # technický audit obou MCP, podklad pro skill
 ├── NAVRH-ZAPISY.md                 # scénáře a Adamova rozhodnutí o zápisech (1. 10. 2026)
 ├── RAYNET-OPTIMALIZACE.md          # doporučené nastavení Raynetu
 └── RAYNET-MANUAL-POZNAMKY.md       # poznámky z celé nápovědy a API Raynetu
+
+tests/                              # regresní testy (ilustrační jména, skutečné typy chyb)
 ```
 
 Reference se načítají až když jsou potřeba. `SKILL.md` nese jen to, co se použije
@@ -90,22 +97,44 @@ při každém běhu.
 - Pro bonitu: přístup k metodice bank (cíl: Evergreen app jako jediné místo, zatím Adamův vault `wiki/metodiky/`)
 - Raynet plán Professional (limity: 50 automatizací za měsíc, 8 API klíčů, 25 povinných polí)
 
-## Převodní skript
+## Instalace
 
-Pocket vrací shrnutí v Markdownu, Raynet pole `description` a `solution` renderuje
-jako HTML. Syrový Markdown se v CRM zobrazí i s `###` a `**`, takže převod je povinný.
-Skript navíc odstraní proprietární bloky `<pocket:chart>` a `<pocket:decision-tree>`
-a rediguje citlivé údaje.
+Skill je složka `pocket-to-raynet/`. Ve všech prostředích potřebuje připojené MCP servery **Hey Pocket** a **Raynet**.
+
+- **Claude (claude.ai, desktop, mobil):** soubor `pocket-to-raynet.skill` otevřete v Claude a klikněte na **Save skill**.
+  Vyrobíte ho z kořene repozitáře: `zip -r pocket-to-raynet.skill pocket-to-raynet -x '*/__pycache__/*'`
+- **Claude Code:** `cp -r pocket-to-raynet ~/.claude/skills/`
+- **Hermes Agent** ([Nous Research](https://hermes-agent.nousresearch.com/docs/)): čte skilly ve stejném formátu (standard
+  agentskills.io). Zkopírujte složku do `~/.hermes/skills/` a připojte oba MCP servery. *Zatím nevyzkoušeno.*
+
+## Nástroje
+
+Čtyři skripty, jen standardní knihovna Pythonu 3, bez závislostí.
+
+**Párování jmen** — `scripts/match_name.py`. Filtr `name` v Raynetu rozlišuje diakritiku, přepis bývá v pádě a cizí jména
+jsou v CRM zapsaná foneticky. Skript z přepsaného jména vyrobí hledací výrazy (včetně českého přepisu: `Schneider` → `Šna…`)
+a kandidáty seřadí foneticky. U klienta vedeného v CRM dvakrát odmítne být jistý. Verdikt se týká jen jména, druhý znak
+(e-mail nebo telefon) se ověřuje zvlášť.
+
+**Převod zápisu** — `scripts/md_to_raynet_html.py`. Raynet renderuje `description` a `solution` jako HTML; skript převede
+Markdown, odstraní bloky `<pocket:chart>` a `<pocket:decision-tree>` a rediguje RČ a čísla účtů.
 
 ```bash
-python3 pocket-to-raynet/scripts/md_to_raynet_html.py summary.md \
-        --recording-id 890c636f-1555-4714-aa95-3f65618db135
-
-# režim „doslovně Pocket“: ověří, že převod nezměnil text (při rozdílu návratový kód 1)
-python3 pocket-to-raynet/scripts/md_to_raynet_html.py summary.md --check
+python3 pocket-to-raynet/scripts/md_to_raynet_html.py summary.md --recording-id <id>
+python3 pocket-to-raynet/scripts/md_to_raynet_html.py summary.md --check   # režim „doslovně Pocket“
 ```
 
-Bez závislostí, jen standardní knihovna Pythonu 3.
+**Koncept e-mailu do pošty** — `scripts/make_email_draft.py`. Vyrobí `.eml` s hlavičkou `X-Unsent: 1`, takže se v Apple Mail
+otevře jako koncept k úpravě, ne jako přijatá zpráva jen pro čtení. Nic se neodesílá.
+
+**Audit log** — `scripts/audit_log.py`. Řádek za každou akci; přepis bez uloženého původního stavu odmítne. `stats` ukáže
+u každého typu akce podíl návrhů potvrzených beze změny.
+
+## Testy
+
+```bash
+python3 -m unittest discover -s tests -v
+```
 
 ## Stav
 

@@ -1,16 +1,17 @@
 #!/usr/bin/env python3
 """Dohledání klienta podle jména, které Pocket přepsal z hovoru.
 
-Pocket jména komolí — `Balint` místo `Balent`, `Semrád` místo `Semerák`,
-a německé jméno `Bretschneider` je v Raynetu zapsané foneticky jako `Bretšnajdr`.
-Přímé hledání pak nenajde nic a klient se zapíše špatně nebo vůbec.
+Pocket jména komolí (`Kolint` místo `Kolent`, `Lemrád` místo `Lemerák`) a cizí jména
+bývají v Raynetu zapsaná foneticky (`Schneider` jako `Šnajdr`). Přímé hledání pak nenajde
+nic a klient se zapíše špatně nebo vůbec. (Jména jsou ilustrační, chyby skutečné.)
 
 Skript řeší obě půlky problému:
 
   variants   Z přepsaného jména udělá pár hledacích výrazů pro `company_list(name=…)`.
              Filtr `name` v Raynetu je substring bez ohledu na velikost písmen, ale
-             **rozlišuje diakritiku** (`Calek` nenajde `Čálek`), a přepis často
-             obsahuje pád („s Honzou Rumlem"). Výrazy proto zkracuje na kmen a prefix.
+             **rozlišuje diakritiku** (`Capek` nenajde `Čápek`), a přepis často
+             obsahuje pád („s Honzou Kumlem"). Výrazy proto zkracuje na kmen a prefix
+             a přidává český fonetický přepis cizích jmen (`Schneider` → `Šnajder`).
 
   score      Seřadí kandidáty z Raynetu podle podobnosti a řekne, jak moc si je jistý.
              Porovnává foneticky (sch→š, ei→aj, y→i, zdvojená písmena), bez diakritiky,
@@ -24,9 +25,9 @@ Verdikt řídí, co skill udělá dál:
   žádný          klient v CRM nejspíš není
 
 Použití:
-    python3 match_name.py variants "Honzou Rumlem"
-    python3 match_name.py score "Jaroslav Semrád" kandidati.json [další.json …]
-    cat odpoved_company_list.json | python3 match_name.py score "Jaroslav Semrád" -
+    python3 match_name.py variants "Honzou Kumlem"
+    python3 match_name.py score "Jaroslav Lemrád" kandidati.json [další.json …]
+    cat odpoved_company_list.json | python3 match_name.py score "Jaroslav Lemrád" -
 
 Kandidáti se berou přímo z odpovědi `company_list` / `lead_list` (objekt s polem
 `data`), nebo jako prostý seznam záznamů. Víc souborů se sloučí a deduplikuje podle id.
@@ -78,8 +79,8 @@ def fold(text: str) -> str:
 def phonetic(token: str) -> str:
     """Klíč pro porovnání: jak slovo zní, ne jak je napsané.
 
-    Nejdřív převede cizí hlásky na české (Bretschneider → bretšnajder;
-    `t` před `sch` zůstává, česky se píše Bret-šnajdr),
+    Nejdřív převede cizí hlásky na české (Schneider → šnajder; `t` před
+    `sch` zůstává, česky se píše např. Bret-šnajdr),
     teprve pak odstraní diakritiku — jinak by se š z `sch` ztratilo dřív,
     než vznikne.
     """
@@ -93,13 +94,26 @@ def phonetic(token: str) -> str:
         s = s.replace(src, dst)
     s = fold(s)
     s = re.sub(r"[^a-z]", "", s)
-    return re.sub(r"(.)\1+", r"\1", s)  # Hassová → hasova
+    return re.sub(r"(.)\1+", r"\1", s)  # Bassová → basova
+
+
+def czech_respell(word: str) -> str:
+    """Cizí pravopis přepsaný česky, s diakritikou — tak, jak bývá zapsaný v CRM.
+
+    Na rozdíl od `phonetic` diakritiku nechává: slouží k hledání a filtr `name`
+    ji rozlišuje. `Schneider` → `Šnajder`, takže prefix `Šna` najde `Šnajdr`.
+    """
+    s = word.lower()
+    for src, dst in (("sch", "š"), ("sh", "š"), ("tz", "c"), ("ck", "k"), ("ph", "f"),
+                     ("th", "t"), ("qu", "kv"), ("w", "v"), ("ei", "aj"), ("eu", "oj")):
+        s = s.replace(src, dst)
+    return s[:1].upper() + s[1:]
 
 
 def base_forms(token: str) -> set[str]:
     """Možné základní tvary slova, které může být v pádě.
 
-    Přepis zachytí „s Honzou Rumlem" nebo „Pavlu Sýkorovi", v CRM je ale 1. pád.
+    Přepis zachytí „s Honzou Kumlem" nebo „Pavlu Procházkovi", v CRM je ale 1. pád.
     Vrací víc kandidátů; skóre se pak bere přes nejlepší z nich.
     """
     t = token.lower()
@@ -109,16 +123,16 @@ def base_forms(token: str) -> set[str]:
             forms.add(t[: -len(suffix)] + repl)
     if len(t) > 4:
         if t.endswith("ovi"):
-            forms.update({t[:-3], t[:-3] + "a"})       # Balentovi, Sýkorovi
+            forms.update({t[:-3], t[:-3] + "a"})       # Dvořákovi, Procházkovi
         if t.endswith("em"):
-            forms.add(t[:-2])                          # Rumlem, Kubíkem
+            forms.add(t[:-2])                          # Kumlem, Novákem
         if t.endswith("ou"):
             forms.add(t[:-2] + "a")                    # Honzou → Honza
         if t.endswith("u") and len(t) > 5:
             forms.add(t[:-1])                          # Pavlu
         if t.endswith("a"):
-            forms.add(t[:-1])                          # Balenta (2. pád)
-    # Pohyblivé e: Čálkem → čálk → čálek, Pavlu → pavl → pavel.
+            forms.add(t[:-1])                          # Nováka (2. pád)
+    # Pohyblivé e: Čápkem → čápk → čápek, Pavlu → pavl → pavel.
     for f in list(forms):
         if len(f) >= 3 and re.search(r"[^aeiouyáéěíóúůý][^aeiouyáéěíóúůý]$", f):
             forms.add(f[:-1] + "e" + f[-1])
@@ -128,7 +142,7 @@ def base_forms(token: str) -> set[str]:
 def tokens_of(name: str, is_query: bool = False) -> list[str]:
     """Rozdělí jméno na slova bez titulů, interpunkce a přípon za čárkou."""
     if is_query:
-        bracket = re.search(r"\[([^\]]+)\]", name)   # Pocket: „Konzultace [Peter Balent]"
+        bracket = re.search(r"\[([^\]]+)\]", name)   # Pocket: „Konzultace [Jan Novák]"
         if bracket:
             name = bracket.group(1)
     name = re.sub(r"[\[\]()_]", " ", name)
@@ -139,7 +153,7 @@ def tokens_of(name: str, is_query: bool = False) -> list[str]:
     words = [w for w in raw if len(w) > 1 and fold(w.lower()) not in TITLES]
     if is_query:
         kept = [w for w in words if w.lower() not in STOPWORDS]
-        # Z delší fráze („Úvěr a bonita Jaroslav Semrád") vezmi poslední dvě slova
+        # Z delší fráze („Úvěr a bonita Jaroslav Lemrád") vezmi poslední dvě slova
         # s velkým písmenem. Velké bývá i první slovo věty, proto ne všechna.
         if len(kept) > 2:
             capital = [w for w in kept if w[:1].isupper()] or kept
@@ -165,7 +179,7 @@ def sim(query_word: str, cand_word: str) -> float:
 def score_candidate(query: list[str], cand: list[str]) -> float:
     """Skóre 0–1. Příjmení váží 75 %, křestní jméno 25 %.
 
-    Pořadí se nepředpokládá: v Raynetu je „Tomáš Josef" i „Pospíšilová Vladislava",
+    Pořadí se nepředpokládá: v Raynetu je „Lukáš Josef" i „Novotná Vladislava",
     takže se zkouší každé přiřazení a bere se nejlepší.
     """
     if not query or not cand:
@@ -271,6 +285,11 @@ def cmd_variants(name: str) -> dict:
     for n in (4, 3):
         if len(stem) > n:
             out.append(stem[:n])
+    # Cizí jméno zapsané v CRM foneticky: rozdíl bývá hned na začátku
+    # (Sch- vs Š-), takže prefix originálu nepomůže, prefix přepisu ano.
+    respelled = czech_respell(stem)
+    if respelled.lower() != stem.lower():
+        out += [respelled] + [respelled[:n] for n in (4, 3) if len(respelled) > n]
     short = stem[:3]
     toggled = toggle_hacek(short)
     if toggled:

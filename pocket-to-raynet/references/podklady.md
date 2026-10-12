@@ -7,7 +7,7 @@ Otevři, když se v hovoru řeší úvěr a je potřeba zjistit, co od klienta j
 - [Postup](#postup)
 - [Kde zjistit, co už je](#kde-zjistit-co-už-je)
 - [Co je potřeba](#co-je-potřeba)
-- [Evidence v popisu OP](#evidence-v-popisu-op)
+- [Evidence v kartě OP](#evidence-v-kartě-op)
 
 ## Postup
 
@@ -18,27 +18,27 @@ Otevři, když se v hovoru řeší úvěr a je potřeba zjistit, co od klienta j
 4. **Koncept e-mailu** — jen ✗ položky, seskupené po blocích (viz `email-style.md`).
    Položky ? vyžádej podmíněně: „pokud jste ještě neposílal, prosím i o …".
    Položky, které si Adam zajišťuje sám, po klientovi **nechtěj**.
-5. **Evidence** — do popisu OP připiš, co bylo vyžádáno (viz
-   [Evidence v popisu OP](#evidence-v-popisu-op)).
+5. **Evidence** — co chybí a co bylo vyžádáno, patří do řádku „Otevřené body / doptat" v kartě OP
+   (viz [Evidence v kartě OP](#evidence-v-kartě-op)).
 
 U nového zájemce (lead) nic není — e-mail obsahuje celý seznam podle případu.
 
 ## Kde zjistit, co už je
 
-Ověřeno 27. 9. 2026: doklady **nejsou** v Raynetu jako přílohy (`attachments: []`
-u klienta i OP) a **nejsou** ani na Google Drive — tam jsou jen exporty nahrávek
-z Pocketu. Co od klienta přišlo, se proto zjišťuje z těchto zdrojů:
+Ověřeno 27. 9. 2026: doklady **nejsou** v Raynetu jako přílohy (`attachments: []` u klienta i OP) a **nejsou** ani na
+Google Drive — tam jsou jen exporty nahrávek z Pocketu. Přílohy e-mailů nástroje Raynetu nevracejí. Co od klienta přišlo,
+se proto zjišťuje z těchto zdrojů:
 
 | Zdroj | Jak | Co v něm je |
 |---|---|---|
-| **Popis OP** | `businessCase_get(id)` → `description` | oddíl „PODKLADY OD KLIENTA": co přišlo, kdy, a řádek **„Chybí:"** |
-| **E-maily od klienta** | `activity_list(companyId=<id>)` → řádky `_entityName: "Email"`, kde je klient v roli `FROM` | text e-mailu — „v příloze posílám DPFO za rok 2025" |
+| **Karta OP** | `businessCase_get(id)` → `description` | řádek „Otevřené body / doptat"; u starších OP ruční poznámky pod „Původní poznámky" (dřív oddíl „PODKLADY OD KLIENTA" s řádkem „Chybí:") |
+| **E-maily od klienta** | `email_list(companyId=<id>, completedFrom=<začátek případu>)` → řádky, kde `from` je klient; `email_get(id)` jen u těch, které vypadají na podklady | text e-mailu — „v příloze posílám DP za rok 2025". U IMAP importů je `from` prázdné, pak rozhoduje předmět |
 | **Dřívější hovory a schůzky** | `solution` a `description` aktivit klienta | co bylo slíbeno, co domluveno |
-| **Tento hovor** | přepis | „už jsem vám to poslal", „pošlu zítra" |
+| **Tento hovor** | přepis (ne shrnutí Pocketu) | „už jsem vám to poslal", „pošlu zítra" |
 
-Samotné soubory k dispozici nejsou — rozhoduje, co o nich říkají zdroje výše.
-Když si nejsi jistý, jestli dokument přišel, označ ho ? a zeptej se podmíněně,
-ne jako by chyběl.
+`email_list` filtruje přes `completedFrom`, takže najde i přijaté e-maily, které nemají plánovaný čas; `activity_list`
+s časovým oknem na `scheduledFrom` by je nevrátil. Samotné soubory k dispozici nejsou — rozhoduje, co o nich říkají zdroje
+výše. Když si nejsi jistý, jestli dokument přišel, označ ho ? a zeptej se podmíněně, ne jako by chyběl.
 
 ## Co je potřeba
 
@@ -101,26 +101,11 @@ nedoložená — ověřit a případně upravit.
 - potvrzení o bezdlužnosti
 - zástavní smlouva, pojistná smlouva k nemovitosti
 
-## Evidence v popisu OP
+## Evidence v kartě OP
 
-Stávající praxe (ověřeno na OP-26-0462): v `description` obchodního případu je
-oddíl, který eviduje podklady:
+Co chybí, se vede v kartě OP (krok 10 skillu, šablona v `sablony-zapisu.md` → Karta OP) v řádku
+**„Otevřené body / doptat"**. Samostatný oddíl pro podklady nezakládej.
 
-```
-PODKLADY OD KLIENTA (email 20.–21. 9. 2026, klient@example.cz):
-- DPFO 2025 zasláno (příloha emailu). …
-- Chybí: DPPO <firma> vč. příloh (rozvaha, VZZ v plném rozsahu) za 2 roky.
-```
-
-Po odeslání požadavku (tj. po vytvoření konceptu e-mailu) do oddílu připiš řádek:
-
-```
-- <datum>: vyžádáno e-mailem: <položky>
-```
-
-`businessCase_update` pole `description` **přepisuje celé**. Postup je proto vždy:
-načti aktuální popis přes `businessCase_get`, připoj řádek, zapiš — a původní
-popis ulož do audit logu jako `before` (akce `update_business_case`).
-Když oddíl „PODKLADY OD KLIENTA" v popisu ještě není, založ ho na konci popisu.
-
-Formát oddílu drž stejný jako výše — je čitelný pro lidi i pro příští běh skillu.
+Po vyžádání podkladů řádek aktualizuj při nejbližším zápisu karty, např. „DP 2025 a výpisy 7–9/2026 (vyžádáno e-mailem 12. 10.)".
+Karta se přepisuje celá: před zápisem `businessCase_get`, ruční text zůstává pod „Původní poznámky" a původní `description`
+ulož do audit logu jako `before` (akce `update_business_case`).

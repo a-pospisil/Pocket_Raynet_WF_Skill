@@ -1,113 +1,32 @@
 {
- "_note": "Skutečná jména klientů z Raynetu (instance evergreen), jak je vrátil company_list během auditu a suchého běhu — jen id a jméno, bez kontaktů. Testy párování stojí právě na konkrétních chybách přepisu těchto jmen.",
+ "_note": "Ilustrační klienti — jména a id jsou smyšlená. Každé jméno ale nese stejný typ chyby přepisu, jaký se u skutečného klienta v provozu objevil (fonetický zápis cizího jména, záměna písmen, pád, domácké jméno, duplicita v CRM, osoba vs. její firma).",
  "data": [
-  {
-   "id": 599,
-   "name": "Peter Balent"
-  },
-  {
-   "id": 41,
-   "name": "Ing. Jaroslav Semerák"
-  },
-  {
-   "id": 39,
-   "name": "Ing. Martin Gajdošech"
-  },
-  {
-   "id": 452,
-   "name": "Michal Gajdošech"
-  },
-  {
-   "id": 1082,
-   "name": "Fenni Gergelyová"
-  },
-  {
-   "id": 54,
-   "name": "Milan Čálek"
-  },
-  {
-   "id": 268,
-   "name": "Calek Invest s.r.o."
-  },
-  {
-   "id": 1083,
-   "name": "MDDr. Roman Macko"
-  },
-  {
-   "id": 1071,
-   "name": "Tomáš Josef"
-  },
-  {
-   "id": 342,
-   "name": "Jana Hassová"
-  },
-  {
-   "id": 578,
-   "name": "Pavel Sýkora"
-  },
-  {
-   "id": 124,
-   "name": "Jan Bretšnajdr"
-  },
-  {
-   "id": 379,
-   "name": "Jan Ruml"
-  },
-  {
-   "id": 912,
-   "name": "David Ruml"
-  },
-  {
-   "id": 913,
-   "name": "Jaroslav Ruml"
-  },
-  {
-   "id": 914,
-   "name": "Marcela Rumlová"
-  },
-  {
-   "id": 9,
-   "name": "Ing. Michal Huml"
-  },
-  {
-   "id": 325,
-   "name": "Michal Huml"
-  },
-  {
-   "id": 107,
-   "name": "Michal Hanuliak"
-  },
-  {
-   "id": 716,
-   "name": "Lenka Hanuliaková Toiflová"
-  },
-  {
-   "id": 540,
-   "name": "Mgr. Pavel Hendrich, LL.M., advokátní kancelář"
-  },
-  {
-   "id": 613,
-   "name": "Zbyněk Svoboda"
-  },
-  {
-   "id": 603,
-   "name": "Zbyněk Svoboda"
-  },
-  {
-   "id": 2,
-   "name": "Evergreen finance, s.r.o."
-  },
-  {
-   "id": 102,
-   "name": "Adam Pospíšil"
-  },
-  {
-   "id": 4,
-   "name": "Klára Pospíšilová"
-  },
-  {
-   "id": 221,
-   "name": "Pospíšilová Vladislava"
-  }
+  {"id": 9101, "name": "Peter Kolent"},
+  {"id": 9102, "name": "Ing. Jaroslav Lemerák"},
+  {"id": 9103, "name": "Ing. Martin Bajdošech"},
+  {"id": 9104, "name": "Michal Bajdošech"},
+  {"id": 9105, "name": "Fanni Szekelyová"},
+  {"id": 9106, "name": "Milan Čápek"},
+  {"id": 9107, "name": "Capek Invest s.r.o."},
+  {"id": 9108, "name": "MDDr. Roman Macek"},
+  {"id": 9109, "name": "Lukáš Josef"},
+  {"id": 9110, "name": "Jana Bassová"},
+  {"id": 9111, "name": "Pavel Procházka"},
+  {"id": 9112, "name": "Jan Šnajdr"},
+  {"id": 9113, "name": "Jan Kuml"},
+  {"id": 9114, "name": "David Kuml"},
+  {"id": 9115, "name": "Jaroslav Kuml"},
+  {"id": 9116, "name": "Marcela Kumlová"},
+  {"id": 9117, "name": "Ing. Michal Kopal"},
+  {"id": 9118, "name": "Michal Kopal"},
+  {"id": 9119, "name": "Michal Horniak"},
+  {"id": 9120, "name": "Lenka Horniaková Tóthová"},
+  {"id": 9121, "name": "Mgr. Pavel Hendl, LL.M., advokátní kancelář"},
+  {"id": 9122, "name": "Zbyněk Dvořák"},
+  {"id": 9123, "name": "Zbyněk Dvořák"},
+  {"id": 9124, "name": "Ukázka finance, s.r.o."},
+  {"id": 9125, "name": "Adam Ukázka"},
+  {"id": 9126, "name": "Klára Novotná"},
+  {"id": 9127, "name": "Novotná Vladislava"}
  ]
 }

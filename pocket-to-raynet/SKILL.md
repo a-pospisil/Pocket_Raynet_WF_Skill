@@ -1,227 +1,165 @@
 ---
 name: pocket-to-raynet
 description: >-
-  Zapisuje hovory nahrané v Hey Pocket do Raynet CRM jako realizované telefonáty
-  včetně shrnutí, vazby na klienta a obchodní případ, zakládá navazující aktivity
-  z action items a připravuje e-maily z hovoru jako upravitelné koncepty. Použij vždy,
-  když uživatel chce dostat hovor, nahrávku, telefonát nebo konzultaci do Raynetu nebo
-  do CRM — i když řekne jen „zapiš ten hovor", „hoď to do CRM", „zpracuj dnešní hovory",
-  „co jsem dnes navolal, dej to ke klientům", „udělej z toho aktivitu" nebo „připrav
-  klientovi mail z toho hovoru". Spusť i tehdy, když uživatel nezmíní Pocket ani Raynet
-  jménem, ale jde o převod nahraného hovoru na CRM záznam, o follow-up nebo e-mail
-  z hovoru, nebo o dohledání, jestli už je hovor v CRM zapsaný.
+  Zapisuje hovory a schůzky nahrané v Hey Pocket do Raynet CRM: stručný strukturovaný
+  zápis k aktivitě (dokončí naplánovanou, jinak založí realizovanou), kartu případu
+  v popisu obchodního případu včetně tabulky nájmů a bonity po bankách, vlastní pole
+  klienta, jeden souhrnný úkol s návrhem e-mailu a návrh posunu fáze. Ráno umí připravit
+  dnešní schůzky. Použij vždy, když uživatel chce dostat hovor, nahrávku, telefonát,
+  schůzku nebo konzultaci do Raynetu nebo do CRM — i když řekne jen „zapiš ten hovor",
+  „hoď to do CRM", „zpracuj dnešní hovory", „dej to ke klientům", „udělej z toho aktivitu"
+  nebo „připrav mi dnešní schůzky". Spusť i tehdy, když uživatel nezmíní Pocket ani Raynet
+  jménem, ale jde o převod nahraného hovoru na CRM záznam, o follow-up z hovoru,
+  o dohledání, jestli už je hovor v CRM zapsaný, nebo o přípravu na schůzku s klientem.
 compatibility: >-
   Vyžaduje MCP servery Hey Pocket (plán Pro) a Raynet CRM, a Python 3 pro skripty
   (jen standardní knihovna).
 metadata:
-  version: "0.2.0"
-  author: Adam Pospíšil
+  version: "0.3.0"
   hermes:
     tags: [crm, raynet, pocket, hypoteky, email]
 ---
 
 # Pocket → Raynet
 
-Převádí nahrávky hovorů z Hey Pocket na realizované telefonáty v Raynet CRM.
+Převádí nahrávky hovorů a schůzek z Hey Pocket na stručné, strukturované zápisy v Raynet CRM.
 
-Prostředí je **finanční poradenství — hypotéky a investiční nemovitosti**. Hovory jsou
-konzultace s klienty, bankéři a kolegy. Do CRM patří klientské hovory; soukromé
-jen jako osobní aktivita bez obsahu.
+Prostředí je **finanční poradenství: hypotéky a investiční nemovitosti** (Evergreen Finance). Hovory jsou konzultace s klienty,
+bankéři, odhadci, makléři a kolegy. Skill běží v Claude Code i v orchestrátoru **Hermes** (každý poradce má vlastní instanci
+s vlastním Pocketem a Raynetem). Proto nepoužívá nástroje vázané na jedno prostředí: potvrzení je obyčejná otázka v chatu.
 
-## Jak to funguje
+## Tvrdá pravidla
 
-Proces je **interaktivní, ne automatický**. Uživatel ho spustí pokynem, ty připravíš
-návrh a **před zápisem ho necháš potvrdit**. Není to opatrnost pro opatrnost: Raynet
-obsahuje přes 1000 klientů, z toho ~94 % fyzických osob, mezi nimi už existující
-duplicity, a Pocket komolí jména v přepisech. Špatně spárovaný hovor skončí u cizího
-člověka a nikdo si toho nevšimne. Potvrzení stojí pět vteřin, oprava půl hodiny.
+Platí vždy, bez výjimky. Zdůvodnění: `docs/NAVRH-ZAPISY.md`, kap. 4a.
 
-Zápis do CRM je navíc **nevratný přes MCP** — žádný `delete` nástroj neexistuje.
-
-Potvrzování se má postupně vypínat tam, kde se ukáže, že skill nechybuje
-(viz [Režimy potvrzování](#režimy-potvrzování)). Aby to šlo posoudit, zapisuje se
-každá akce do [audit logu](#audit-log) — včetně toho, jestli uživatel návrh opravil.
-
-E-maily se **nikdy neodesílají**, jen připraví jako koncept k úpravě.
+1. **Nikdy nezapsat pod jiného klienta.** Klient je jistý jen při shodě dvou nezávislých znaků (e-mail nebo telefon + příjmení),
+   nebo když ho uživatel jmenuje. Jinak se zeptej.
+2. **Naplánovanou aktivitu z téhož dne dokonči, nezakládej novou.** Když u klienta visí telefonát, schůzka nebo událost
+   naplánovaná **na stejný den**, kdy hovor proběhl, a podle Pocketu proběhla v jiný čas (později i dřív), označ jako hotovou
+   tu původní (krok 5, větev A; Událost větev A2). Aktivitu naplánovanou na jiný den ani nenaplánovanou nedokončuj (Adam, 1. 10. 2026).
+3. **Při nejistotě se zeptej** (klient, OP, aktivita k dokončení, rozdělení hovoru, posun fáze). Zápis přes MCP nejde smazat.
+4. **Nic nemaž a nic neruš sám od sebe.** Duplicitní nebo testovací telefonát zruš (`status="CANCELLED"`) jen na výslovný
+   pokyn uživatele. Schůzky s pozvánkou nikdy: zrušení v Raynetu je smaže i v Google kalendáři.
+5. **Rodná čísla a čísla účtů jen z dokumentu, nikdy z hovoru.** Z přepisu ani ze shrnutí Pocketu je nepřebírej (čísla komolí).
+   Do karty klienta (`Rodne_cisl`, `bankAccount`) je zapiš jen z dokumentu, který máš k dispozici (DP, výpis, smlouva, doklad),
+   v náhledu s uvedením zdroje (Adam, 1. 10. 2026). V textu zápisu je nikdy neuváděj.
+6. **Bez potvrzení se nic nezapíše.** Nejdřív náhled, pak zápis.
+7. **Zápis nikdy do Události.** Událost (`Event`) nemá v rozhraní Raynetu pole „Výsledek“: zápis uložený do jejího `solution`
+   se na kartě klienta nezobrazí. Zápis patří jen do Schůzky (`Meeting`) nebo Telefonátu (`PhoneCall`). Naplánovaná Událost
+   se řeší větví A2 v kroku 9 (Adam, 12. 10. 2026).
 
 ## Postup
 
-### 1. Zjisti rozsah
+### 0. Zjisti, kdo zapisuje
 
-Co se má zpracovat? Typicky jedna z variant:
+```
+user_info()                          → username (e-mail přihlášeného uživatele)
+person_list(email=<username>)        → id = owner pro všechny zápisy
+```
+
+Vlastník se nikdy nezadává napevno. Každý poradce zapisuje sám za sebe (Adam = 2, ostatní viz `references/raynet-reference.md`).
+
+### 1. Zjisti rozsah
 
 | Pokyn | Rozsah |
 |---|---|
 | „zapiš poslední hovor" | 1 nejnovější nahrávka |
 | „zpracuj dnešní hovory" | `recordingDateAfter` = dnešní půlnoc |
-| „zapiš hovor s Balentem" | konkrétní nahrávka, klient zadaný ručně |
+| „zapiš hovor s Novákem" | konkrétní nahrávka, klient zadaný ručně (nejbezpečnější varianta) |
+| „připrav dnešní schůzky" / ranní běh | režim **Příprava**, viz konec souboru |
 
-Když to z pokynu nejde určit, zeptej se. Neodvozuj rozsah z „posledního běhu" —
-skill si mezi spuštěními nic nepamatuje, stav drží výhradně Raynet.
-
-Varianta s ručně zadaným klientem je nejrychlejší a nejbezpečnější, protože přeskočí
-párování klienta (krok 4). Když uživatel klienta jmenuje, využij toho.
+Když to z pokynu nejde určit, zeptej se. Skill si mezi spuštěními nic nepamatuje, stav drží Raynet.
 
 ### 2. Načti nahrávky
 
-`search_pocket_conversations` s `recordingDateAfter` / `recordingDateBefore`.
-Bez `query` běží recency režim, který vrací plné přepisy po 5 na stránku.
+`search_pocket_conversations` s `recordingDateAfter` / `recordingDateBefore` (recency režim bez `query`, 5 na stránku).
+`query` jen na dohledání podle tématu, ne podle jména. Vždy deduplikuj podle `recordingId`.
 
-`query` použij jen na dohledání konkrétní nahrávky podle tématu. **Nespoléhej na něj
-při hledání podle jména klienta** — vrací sekční zásahy, opakuje tutéž nahrávku
-víckrát a jméno v titulku spolehlivě netrefí. Vždy deduplikuj podle `recordingId`.
+`recordingDate` ze `search_*` je **začátek** hovoru (→ `scheduledFrom`).
 
-`recordingDate` ze `search_*` je **začátek** hovoru. Zapamatuj si ho — je to klíč
-pro kroky 4 a 5 i pro `scheduledFrom`.
+### 3. Roztřiď nahrávky a vyber šablonu
 
-### 3. Rozhodni, co do CRM vůbec patří
+| Typ | Co s ním | Šablona |
+|---|---|---|
+| krátký klientský hovor (do ~3 min, stav podkladů, termín) | zapsat | **S** mikrozápis |
+| follow-up, nabídka, průběh žádosti, čerpání, servis | zapsat | **M** |
+| úvodní schůzka, strategická konzultace, roadmapa bonity | zapsat + karta OP + bonita | **L** |
+| třetí strana k případu (odhadce, makléř, developer, RK, advokát, notář, úschova, účetní, daňový poradce) | zapsat k OP klienta, bez OP ke klientovi | S/M |
+| kolega: předání nebo porada ke konkrétnímu případu | zapsat k OP | S/M |
+| **bankéř přes víc případů** | **rozdělit**: ke každému jistě spárovanému klientovi S do jeho OP, zbytek se zeptat | S × N |
+| nový zájemce, který v CRM není | lead (krok 4) | S |
+| diktát sobě, interní porada bez klienta, appka, osobní, lékař, Broker Trust, prázdné, nepřijatý hovor | **nezapisovat** | – |
 
-Ne každá nahrávka je klientský hovor. Do CRM nepatří:
-
-| Typ | Jak poznat |
-|---|---|
-| Diktované poznámky sobě | jeden mluvčí, „poznámky k…", příprava prezentace |
-| Interní porady s kolegy | protistrana je poradce z týmu, vývojář, asistentka |
-| Vývojové hovory | řeší se aplikace, issues, merge |
-| **Hovory s bankéřem přes víc případů** | jeden bankéř, přeskakuje mezi klienty, metodika |
-| **Nepřijatý hovor / zapomenuté nahrávání** | útržky, okolní ruch, žádná souvislá konverzace |
-| Testovací a prázdné | pár desítek znaků, `[background noise]` |
-
-Bankéřské hovory a nepřijaté hovory vypadají na první pohled jako klientské, ale
-zapsat se nedají — bankéřský proto, že se týká několika případů najednou a nejde
-přiřadit k jednomu klientovi, nepřijatý proto, že se nic neodehrálo. Poznáš je
-z obsahu, ne z názvu.
-
-**Soukromý hovor** — protistrana není klient ani kolega a hovor se netýká práce
-(rodina, známí, lékař). Do CRM patří jako **osobní aktivita** (krok 9, větev C):
-bez obsahu, jen s krátkým neutrálním názvem, tak jako ostatní soukromé aktivity
-v Raynetu („Lékař", „Louny"). CRM vidí celý tým — obsah soukromého hovoru do něj
-nepatří.
-
-Vyplyne-li ze soukromého hovoru **požadavek na úvěr nebo spolupráci** („hele,
-potřeboval bych hypotéku"), je to nový obchod: pokračuj krokem 4 a hovor zapiš
-k zájemci, ne jako osobní. Do shrnutí dej jen obchodní část.
-
-Hraniční případy nezahazuj potichu — vypiš je jako přeskočené s důvodem, ať má
-uživatel možnost říct „tenhle zapiš".
-
-Skill si nepamatuje, co jsi minule vědomě přeskočil. Proto se při opakovaném běhu
-přes stejné okno vynoří znovu. Řešením je posouvat datové okno dopředu, ne to řešit
-v rámci skillu.
+Hraniční případy nezahazuj potichu: vypiš je jako přeskočené s důvodem. Šablony a zásady psaní: **`references/sablony-zapisu.md`**
+(otevři vždy před psaním textu).
 
 ### 4. Spáruj klienta
 
-Klienti jsou v Raynetu záznamy entity `company` — i fyzické osoby. Jméno z přepisu
-je nejslabší místo celého procesu: Pocket ho komolí (`Balint`/`Balent`,
-`Semrád`/`Semerák`, `Hasolová`/`Hassová`) a německé jméno `Bretschneider` je v CRM
-zapsané foneticky jako `Bretšnajdr`. Jméno z přepisu ber jako nápovědu, ne jako klíč.
+Klienti jsou záznamy `company`, i fyzické osoby. Hledej v tomto pořadí a **vždy ověř dvěma znaky**:
 
-Postupuj od signálů, které na přepisu nezávisí, k těm, které na něm závisí:
+1. `company_list(email=…)`: nejlepší pokrytí, ale e-mail **není unikátní** (manželé, majitel a jeho s.r.o.).
+2. `company_list(name="Příjmení")`: podřetězec, bez ohledu na velikost písmen.
+3. `company_list(fulltext=…)`: jen celá slova a prefixy.
+4. `lead_list(…)`: nový zájemce bývá nejdřív lead.
 
-**a) Naplánovaná aktivita v čase hovoru.** Měl-li uživatel hovor v kalendáři, víš,
-s kým byl, bez ohledu na to, jak Pocket jméno slyšel:
-
-```
-activity_list(ownerId=2, scheduledFrom=<začátek − 2 h>, scheduledTill=<konec + 1 h>)
-```
-
-Aktivita s klientem, jejíž téma sedí na obsah hovoru, klienta určuje; jméno pak
-jen ověř. Hovory se často uskuteční později, než byly naplánované — proto okno
-začíná dvě hodiny před nahrávkou.
-
-**b) E-mail, pokud v hovoru zazní** — `company_list(email=…)`. Nejlepší pokrytí
-(~97 % klientů), ale **e-mail není unikátní**: sdílí ho majitel se svou s.r.o.,
-manželé, a v jednom ověřeném případě dva různí lidé. Samotná shoda nestačí.
-
-**c) Jméno přes `scripts/match_name.py`.** Filtr `company_list(name=…)` je substring,
-ale **rozlišuje diakritiku** — ověřeno, `Calek` nenajde `Milan Čálek`. A přepis
-bývá v pádě („s Honzou Rumlem"). Skript z jména nejdřív udělá hledací výrazy:
+Pocket komolí jména (`Novak`/`Novák`/`Nowak`, `Dvořáková`/`Dvořáčková`; jména jsou ilustrační) a cizí jména bývají v CRM
+zapsaná foneticky (`Schneider` → `Šnajdr`). Filtr `name` je podřetězec, ale **rozlišuje diakritiku** (ověřeno: příjmení bez háčku
+klienta s háčkem nenajde) a přepis bývá v pádě („s Honzou Novákem"). Jméno z přepisu je nápověda, ne klíč. Na hledání použij
+`scripts/match_name.py`:
 
 ```bash
-python3 scripts/match_name.py variants "Honzou Rumlem"
-# surname_variants: ["Ruml", "Rum", "Řum"]   first_name_fallback: ["Jan"]
+python3 scripts/match_name.py variants "Honzou Novákem"          # hledací výrazy pro company_list(name=…)
+python3 scripts/match_name.py score "Honzou Novákem" odp1.json odp2.json   # seřadí kandidáty z odpovědí
 ```
 
-Každý výraz pošli do `company_list(name=<výraz>)`, odpovědi ulož a nech ohodnotit
-(foneticky, bez diakritiky a titulů, v libovolném pořadí, Honza = Jan):
+`score` porovnává foneticky, bez diakritiky a titulů, v libovolném pořadí slov a zná domácké podoby (Honza = Jan). Jeho verdikt
+(`jistý` / `pravděpodobný` / `nejistý` / `žádný`) se týká **jen jména**, tedy jednoho znaku ze dvou: druhý znak (e-mail nebo telefon)
+ověř zvlášť (tvrdé pravidlo 1). U klienta vedeného v CRM dvakrát vrátí `nejistý` a nehádá.
 
-```bash
-python3 scripts/match_name.py score "Honzou Rumlem" odpoved1.json odpoved2.json
-```
-
-Předávej **jméno**, ne celý název nahrávky. Z názvu si ho skript umí odhadnout
-(obsah hranatých závorek, jinak poslední dvě slova s velkým písmenem), ale jen
-nouzově. Křestní jméno jako hledací výraz použij až nakonec — vrací hodně záznamů.
-
-**d) `lead_list`** — nový zájemce bývá nejdřív lead, ne klient.
-
-Verdikt skriptu řídí, co dál:
-
-| Verdikt | Co udělat |
+| Výsledek | Co udělat |
 |---|---|
-| `jistý` | pokračuj |
-| `pravděpodobný` | pokračuj, ale v návrhu (krok 8) shodu označ: „Semrád → Ing. Jaroslav Semerák (41)?" |
-| `nejistý` | **zastav**, předlož kandidáty s id, e-mailem a vlastníkem, nech vybrat |
-| `žádný` | zkus zbylé výrazy a `lead_list`; pak **zastav**, viz níže |
+| právě 1 zásah se dvěma shodnými znaky | pokračuj |
+| víc kandidátů nebo jen jeden znak | **zastav**, vypiš kandidáty (id, jméno, e-mail, vlastník), nech vybrat |
+| 0 zásahů | navrhni **lead** (`lead_create`: `topic`, `firstName`, `lastName`, `leadPerson=true`, kontakt, zdroj). Po potvrzení založ a zápis naváž na lead. Klienta (fyzickou osobu) přes MCP nezakládej. |
 
-`nejistý` vyjde i tehdy, když je klient v CRM dvakrát (Zbyněk Svoboda je tam pod
-id 613 i 603). Skript mezi shodnými záznamy nehádá — a ty taky ne.
+Když hovor zjevně navazuje na rozjednaný případ (zmiňuje OP, dřívější podklady, předchozí schůzku), 0 zásahů znamená spíš
+chybu párování než nového zájemce: zeptej se, lead nezakládej.
 
-🛑 **Klienta nezakládej přes `company_create`.** Umí vytvořit jen organizaci, ne
-fyzickou osobu — vznikl by záznam špatného typu, který se bude jinak chovat při
-každém dalším párování.
-
-Když klient v CRM není, rozliš dvě situace:
-
-- **Čekal bys ho tam** — hovor navazuje na dřívější jednání, zmiňuje OP nebo
-  podklady. Nejspíš jen selhalo párování: zastav a zeptej se.
-- **Nový zájemce** — první kontakt, požadavek na úvěr nebo spolupráci. Navrhni
-  **lead** (`lead_create` s `leadPerson=true`), který na rozdíl od `company_create`
-  fyzickou osobu umí. Parametry: `references/raynet-reference.md`, *Založení leadu*.
-  Předtím zkontroluj `lead_list`, jestli lead už není.
-
-Z leadu vznikne klient převodem v Raynet UI — přes MCP to nejde (`lead_convert`
-jen napojí lead na už existující záznam). Do té doby zapiš hovor k leadu
-(`phonecall_create(lead=<id>)`).
-
-**Klient není vždy ten, s kým se mluví.** Hovor bývá veden s partnerem, rodičem nebo
-známým, ale financování se řeší pro někoho jiného — a záznam patří k tomu, kdo bude
-dlužníkem. Nahrávka „Martin G. — financování bytu pro Fenni G." patří k Fenni,
-ne k Martinovi. Když jsou v CRM oba, rozhodni podle toho, **čí je to případ**.
+**Klient není vždy ten, s kým se mluví.** Hovor s partnerem, rodičem nebo známým patří k tomu, kdo bude dlužníkem.
+Mluvčího navaž přes `participants`.
 
 ### 5. Zkontroluj, co už u klienta je
 
-Teprve když znáš `companyId`, jde spolehlivě zjistit, jestli hovor není už zapsaný
-a jestli k němu neexistuje naplánovaná aktivita.
-
-Obojí zjistíš dvěma dotazy na **`activity_list`**, ne na `phonecall_list`:
-
 ```
 activity_list(companyId=<id>, createdFrom=<den 00:00>, createdTill=<další den 00:00>)
-activity_list(companyId=<id>, entityType="phonecall", status="SCHEDULED")
+activity_list(companyId=<id>, status="SCHEDULED", scheduledFrom=<den hovoru 00:00>, scheduledTill=<den hovoru 23:59>)
 ```
 
-Obojí je vykoupené chybou ze suchého běhu: hovor bývá uložený i jako **událost**
-nebo schůzka (dotaz na telefonáty ho nevidí), a ručně zapsaný hovor má často
-`scheduledFrom: null` (časové okno na `scheduledFrom` ho **nikdy** nevrátí).
+Vždy `activity_list` přes všechny typy, ne `phonecall_list`: hovor bývá uložený i jako schůzka nebo událost.
+Filtruj přes `createdFrom`, ne přes `scheduledFrom`: ručně zapsaný hovor má často `scheduledFrom: null`.
 
-**Už zpracováno?** Ano, pokud mezi aktivitami klienta je taková, která:
-- má `completed` do ±15 minut od konce nahrávky, **nebo**
-- vznikla týž den a tematicky odpovídá obsahu hovoru, **nebo**
-- má v `description` stopu s `recordingId` této nahrávky.
+**Už zapsáno?** Ano, když aktivita klienta má štítek `AI zápis` nebo stopu s tímto `recordingId`, nebo `scheduledTill` do ±15 min
+od konce nahrávky, nebo vznikla týž den a obsahem odpovídá. Zapsané tiše přeskoč.
 
-Zpracované tiše přeskoč — neohlašuj je jednu po druhé.
+**Naplánovaná aktivita k dokončení (tvrdé pravidlo 2).** Otevřený telefonát, schůzka nebo událost klienta naplánovaná
+**na stejný den** jako hovor, která tématem odpovídá, se **dokončí**, i když hovor proběhl v jiný čas. Téma ber z jejího `title`
+a `description`. Okno `scheduledFrom`/`scheduledTill` v `activity_list` funguje jako překryv, proto u každého kandidáta ověř,
+že jeho vlastní `scheduledFrom` je opravdu ve dni hovoru.
 
-**Existuje naplánovaný hovor k dokončení?** Naplánovaný telefonát, jehož
-`scheduledTill` už uplynul, je kandidát na přepsání tímto realizovaným — hovor
-se prostě uskutečnil později, než bylo v kalendáři.
+U každého kandidáta čti **typ** (`_entityName`): `Meeting` a `PhoneCall` jdou do větve A, `Event` do větve A2 (tvrdé pravidlo 7).
 
-Posuď z přepisu, jestli se týká **téhož tématu** jako ten naplánovaný; téma ber
-z jeho `title` a `description` v Raynetu. Sedí-li, **dokonči existující místo
-zakládání nového** (krok 9). Zůstane tím vazba na OP a nevznikne duplicita ani
-naplánovaný hovor, který by visel otevřený napořád.
+| Situace | Co udělat |
+|---|---|
+| 1 otevřená schůzka nebo telefonát téhož dne, téma sedí | větev A: dokončit ji |
+| 1 otevřená **událost** téhož dne, téma sedí | větev A2: do Události nezapisovat, v náhledu navrhnout převod na Schůzku |
+| víc kandidátů téhož dne nebo nejasné téma | **zeptej se**, kterou dokončit |
+| žádná aktivita téhož dne | větev B: nová realizovaná aktivita |
 
-Nesedí-li téma, založ nový a naplánovaný nech být — uživatel ho vyřídí zvlášť.
+Naplánované schůzky z kalendáře bývají v Raynetu typu Událost (12. 10. 2026 všechny dnešní položky kalendáře; nejspíš je zakládá
+synchronizace s Google kalendářem, `[k ověření]`). Větev A2 proto čekej často.
+
+Otevřené aktivity z **jiných dní** a nenaplánované (`NEW`) nech beze změny. Uveď je jen v náhledu jako „visí otevřené:
+<typ, název, datum>“, ať je uživatel může vyřídit ručně.
 
 ### 6. Najdi obchodní případ
 
@@ -229,298 +167,263 @@ Nesedí-li téma, založ nový a naplánovaný nech být — uživatel ho vyří
 businessCase_list(companyId=<id>, status="B_ACTIVE")
 ```
 
-Vazba na OP je volitelná, ale hodnotná — drží hovor v kontextu úvěrového procesu.
-Při jednom otevřeném OP ho navaž. Při více vyber podle obsahu hovoru, a nejde-li to
-rozhodnout, zeptej se.
+1 otevřený OP: naváž. Víc OP: vyber podle obsahu, a když to nejde jistě, zeptej se. Žádný: zápis bez OP a zmiň to.
+OP sám nezakládej. **Výjimka: běžící žádost u banky bez OP** (bankéř chce podklady, žádost je podaná). Tehdy v náhledu navrhni
+nový OP: název „banka/produkt – popis“, kategorie, fáze, banka v `producent`, výše (`totalAmount` + `vyse_uveru`; když ji neznáš,
+zeptej se). Založ ho až po potvrzení a zápis k němu naváž (Adam, 1. 10. 2026: „chybí zapsaný OP“).
 
-**Nový OP**, když žádný otevřený neodpovídá a z hovoru plyne **nová konkrétní
-potřeba** — „klient chce hypotéku na 10 milionů", „refinancování bytu na firmu".
-Obecné povídání o možnostech bez konkrétního záměru OP nezakládá. Parametry,
-kategorie a výchozí fáze: `references/raynet-reference.md`, *Založení OP*.
-
-OP zakládej **před** telefonátem, ať se na něj telefonát rovnou naváže.
-Založení spustí automatiku Raynetu, která sama vytvoří úkoly „Zaslat nabídku_"
-a „EPP 2" — ty z action items neduplikuj.
-
-⚠️ **Správný OP nemusí patřit klientovi z hovoru.** Případy se jmenují podle banky
-a produktu („Podnikatelský úvěr Moneta – nemovitost 2–3 mil. Kč") a hovor s jedním
-člověkem se může týkat případu vedeného na někom úplně jiném — na spolužadateli,
-manželce nebo tipaři. Když z obsahu plyne případ, který mezi OP spárovaného klienta
-není, **zeptej se** místo toho, abys sáhl po jeho vlastním OP jen proto, že je po ruce.
+⚠️ OP se jmenují podle banky a produktu, ne podle klienta, a případ z hovoru může být vedený na spolužadateli nebo manželce.
+Když z obsahu plyne případ, který mezi OP klienta není, **zeptej se**.
 
 ### 7. Připrav obsah
 
-Načti detail: `get_pocket_conversation(recording_ids=[…])`. Vrátí `summary.markdown`
-a `audioUrl`.
+`get_pocket_conversation(recording_ids=[…])` vrátí `summary.markdown` a `recordingDate` = **konec** hovoru (→ `scheduledTill`).
 
-`recordingDate` z tohoto volání je **konec** hovoru → `scheduledTill`.
-(Začátek máš z kroku 2. Ta nekonzistence je reálná, ověřená, a snadno se na ni naletí.)
+Text piš podle `references/sablony-zapisu.md` (S / M / L). Když potřebuješ převést hotový Markdown, použij
+`scripts/md_to_raynet_html.py` (odstraní `<pocket:*>` bloky a rediguje RČ a čísla účtů).
 
-Text pro Raynet:
+**Shrnutí Pocketu je jen rejstřík témat, fakta ber z přepisu.** Diarizace prohazuje mluvčí a AI shrnutí přisuzuje výroky
+a plány špatné osobě. Případy z 22. 9.–1. 10. 2026: „klient odjíždí do Keni“ (do Keni jel Adam, klient na kongres),
+„dcera jiného klienta“ (šlo o klienta, se kterým se mluvilo), „Adam jede do lázní“ (jela klientka). Proto:
 
-- **`solution`** = shrnutí hovoru. Sem patří Pocket Summary.
-- **`description`** = kontext a vstupní zadání, pokud je co doplnit.
+1. Kdo co řekl, udělá, slíbil, kam jede, částky a data: vždy z přepisu (`get_pocket_conversation` s přepisem), ne ze shrnutí.
+2. Jména osob a firem ověř proti Raynetu a e-mailům. Osoba nebo firma, která je ve shrnutí, ale v přepisu nezazní, je chyba
+   shrnutí: do zápisu ji nepiš.
+3. V náhledu uveď řádek **„Chyby Pocketu“**: co shrnutí tvrdí jinak než přepis a jak to je správně.
+4. Mluvčí v Pocketu přes MCP přejmenovat nejde (nástroj chybí). Do souhrnu napiš „v Pocketu přejmenovat: Speaker 1 = …“,
+   ať to uživatel opraví v appce.
+5. Doporučení pro poradce: na začátku nahrávky nadiktovat jméno klienta a téma. Párování je pak jisté.
 
-Obě pole jsou **HTML**, ne Markdown. Syrový Markdown se v CRM zobrazí jako doslovné
-`###` a `**`. Na převod použij `scripts/md_to_raynet_html.py` — dělá i odstranění
-proprietárních bloků `<pocket:chart>` a `<pocket:decision-tree>`, které Pocket do
-shrnutí vkládá a v CRM nedávají smysl.
+**Režim „doslovně Pocket“ (jen na výslovný pokyn).** Když uživatel řekne „přepiš zápis přesně z Pocketu, nic neměň“
+(Adam, 12. 10. 2026), do `solution` jde AI shrnutí Pocketu (`summary.markdown`) **beze změny textu**, bez šablony S / M / L,
+bez řádku „Chyby Pocketu“ a bez patičky. Jen převod Markdown → HTML skriptem
+`scripts/md_to_raynet_html.py --check` (nadpisy tučně, odrážky jako seznam, vnořené odrážky uvnitř `<li>`; RČ a čísla účtů
+skript dál rediguje). Přepínač `--check` ověří, že text bez značek je shodný s originálem; jinak se nezapisuje. Rozpory shrnutí
+s přepisem napiš jen do chatu, ne do zápisu. Výchozí formát zůstává šablona podle `references/sablony-zapisu.md`, dokud
+uživatel nerozhodne jinak.
 
-```bash
-python3 scripts/md_to_raynet_html.py vstup.md
-```
+Do textu patří i interní věci: další postup, rozdělení práce, ladění s kolegou. Zápis je interní, klient vidí jen návrh e-mailu.
+**Rady k fakturaci nepiš** (jak má fakturace vypadat, komu a kolika odběratelům fakturovat). Fakturaci uveď jen tak, jak ji
+klient sám popsal (Adam, 1. 10. 2026).
 
-Podrobnosti o podporovaných značkách: `references/html-formatting.md`.
+**Bonita (u šablony L, a kdykoli se v hovoru mění příjmy, závazky nebo záměr).** Pro **všech 8 bank** (ČS, ČSOB, KB, RB, UCB,
+mBank, Oberbank, MONETA) podle metodiky:
 
-⚠️ **Citlivé údaje.** Přepisy obsahují rodná čísla, zůstatky úvěrů a čísla účtů.
-Rodná čísla a čísla účtů do CRM nezapisuj — v shrnutí je vynech nebo nahraď.
-Finanční parametry případu (výše úvěru, LTV, sazba, bonita) naopak patří dovnitř,
-jsou to pracovní data.
+- Zdroj pravidel: metodika bank na jednom místě v **Evergreen app** (napojení se připravuje). Do té doby Adamův vault `wiki/metodiky/`.
+  U kolegy bez přístupu k metodice skill bonitu nepočítá a napíše „bonita: chybí přístup k metodice“.
+  Začni `rychla-reference.md`, postup výpočtu a vzorce v `kalkulacky-bank.md` („Postup výpočtu krok za krokem“, „Kontrolní čísla“).
+  Velké stránky nečti celé: blok „⚡ Rychle“, pak `grep -n "^## "` a jen potřebná sekce.
+- Sazby z `temata/sazby-a-slevy-bank.md` (nejvýš 1 měsíc staré, jinak označit), stres podle metodiky banky.
+- Chybějící vstup → **rozpětí min–max** s jednou větou, co je rozdílem. Nic nedomýšlet.
+- Výstup: plný rozpad u každé banky a „projde u X z 8“ (formát v šablonách). Je to orientační výpočet, ne schválení.
+- **Podnikatelské úvěry (MONETA SBL, úvěr pro s.r.o., Živnohypo) bonitu po 8 bankách nepočítají.** Místo ní parametry produktu
+  (obrat, LTV, DSCR, limit) a co banka započte: např. nájmy z DPFO, celý úvěr spoludlužníka (Adam, 1. 10. 2026).
 
-### 8. Ukaž návrh a nech potvrdit
-
-Než cokoli zapíšeš, vypiš přehledně:
-
-```
-Klient:    Peter Balent (id 599)
-OP:        OP-26-0462 – Neúčelový úvěr, zástava byt Prokopova (fáze: Identifikace požadavku)
-Telefonát: Konzultace k hypotéce na Slovensku
-Kdy:       21. 9. 2026 15:48–15:57  (realizován)
-Shrnutí:   <prvních pár řádků převedeného textu>
-```
-
-Co se navrhuje jinak než rutinně, v návrhu **viditelně označ**, ať to uživatel
-nepřehlédne:
-
-- klient s verdiktem `pravděpodobný`: `Klient: Ing. Jaroslav Semerák (41) ⚠ přepis „Semrád"`
-- nový OP: `OP (nový): Hypotéka – koupě bytu Praha 3, 10 000 000 Kč`
-- dokončení naplánovaného: `Dokončí naplánovaný 30517 „Storno HÚ ČS" ze 14:30`
-- nový zájemce: `Lead (nový): Jan Novák – hypotéka na byt, zdroj: vlastní kontakt`
-- soukromý hovor: `Osobní aktivita: „Soukromý hovor" 18:00–18:20, bez obsahu`
-
-U dávky ukaž souhrn a pak polož jednu otázku na celek, ne na každý záznam zvlášť.
-Když uživatel zápis potvrdí pro dávku, neptej se znovu u každé položky.
-
-Když uživatel v návrhu něco opraví, zapiš do logu `outcome: edited` — z toho se
-později pozná, kde skill chybuje a kde už ne.
-
-### 9. Zapiš telefonát
-
-Podle výsledku kroků 3 a 5 jedna ze tří větví.
-
-**Větev A — dokončení naplánovaného hovoru.** Našel se naplánovaný telefonát
-po termínu na stejné téma:
+### 8. Ukaž náhled a nech potvrdit
 
 ```
-phonecall_update(
-  id            = <id naplánovaného telefonátu>,
-  status        = "COMPLETED",
-  scheduledFrom = <skutečný začátek>,
-  scheduledTill = <skutečný konec>,
-  solution      = <HTML shrnutí>,
-  description   = <doplň, nepřepisuj — viz níže>
+Klient:     Jan Ukázkový (id 999, e-mail + příjmení ✓, vlastník Adam)
+OP:         OP-26-0462 – Neúčelový úvěr, zástava byt Prokopova (fáze: Identifikace požadavku)
+Aktivita:   DOKONČIT schůzku 32195 „Konzultace a výpočet“ (naplánováno 21. 9. 15:15, proběhlo 21. 9. 16:02–16:47)
+            visí otevřené: telefonát „Doplnit výpisy“ (18. 9.) – beze změny
+Šablona:    L · štítek AI zápis
+Karta OP:   přepsat stav (nájmy 2 → 3, bonita 2,1–3,5 mil.); ruční text zachován
+Karta kl.:  e-mail2 + telefon (nové) · zdroj = workshop · Pocet_deti 1 → 2 · profil přepsán (3 nemovitosti, fixace ČSOB 6/2028)
+Úkol:       1 souhrnný úkol, 4 body, termín 6. 10., návrh e-mailu ano
+Fáze OP:    návrh Identifikace požadavku → Nabídnuto (zapíše se jen po potvrzení)
+Text:       <prvních 5 řádků zápisu>
+```
+
+Do náhledu patří i řádky `Účastníci:` (vlastník klienta, když není zapisující) a `Chyby Pocketu:` (krok 7).
+U naplánované Události (větev A2) místo řádku `Aktivita:`:
+
+```
+Aktivita:   UDÁLOST 99001 „Jan Ukázkový“ (21. 9. 10:00) – do Události zápis nejde (nemá Výsledek).
+            Volba a) převeď ji v Raynetu na Schůzku (detail aktivity → změna typu), pak zapíšu do Schůzky   ← výchozí
+            Volba b) založím novou Schůzku se zápisem, Událost nechám beze změny k ručnímu smazání
+```
+
+U dávky souhrn a jedna otázka na celek, ale položka s nejistým klientem, OP nebo aktivitou se potvrzuje zvlášť. Dávku nad
+~5 hovorů dej jako stránku k revizi (HTML nebo artefakt), kde uživatel u každého hovoru zvolí Zapsat / Doptat / Nezapisovat
+a texty upraví přímo v náhledu. Zapisuj pak jen položky „Zapsat“ s upravenými texty.
+
+### 9. Zapiš aktivitu
+
+Zápisové nástroje Raynetu běží na dva kroky: první volání vrátí náhled a `confirmToken`, druhé se stejnými argumenty plus tokenem
+zápis provede. Token platí 60 s a nikdy se nevymýšlí.
+
+**Větev A: dokončení naplánované aktivity** (`phonecall_update` / `meeting_update` podle typu; `event_update` nikdy, viz A2):
+
+```
+<typ>_get(id)                                   → současný description, tags, participants
+<typ>_update(
+  id, status="COMPLETED",
+  scheduledFrom=<skutečný začátek>, scheduledTill=<skutečný konec>,
+  solution=<HTML zápis>,
+  tags=<stávající štítky + ",AI zápis">
 )
 ```
 
-`description` naplánovaného hovoru bývá **přípravou na hovor** a má svou hodnotu
-(body k ověření, kontext případu). Načti si ho přes `phonecall_get`, ponech
-a nové informace připoj za něj. Přepsat ho znamená smazat, co si uživatel předem
-připravil.
+`description` (příprava, pozvánka, odkaz na Meet) **nech být**. Vazbu na klienta a OP neposílej, už tam je.
+`participants` neposílej, pokud je neměníš (update přepíše celý seznam).
 
-Vazbu na `company` ani `businessCase` neposílej — už tam je a je správná.
+`status=COMPLETED` nastaví `completed` na `scheduledTill`. Když posíláš skutečný konec ve `scheduledTill`, sedí; jinak hned potom
+`<typ>_update(id, completed=<konec>)` bez `status`. Po zápisu výsledek ověř přes `activity_list(companyId=<id>)`.
 
-Tahle větev **přepisuje existující záznam**. Hodnoty z `phonecall_get` (`status`,
-`scheduledFrom`, `scheduledTill`, `description`, `solution`) ulož do logu jako
-`before` — přes MCP neexistuje undo a tohle je jediná cesta, jak přepis vrátit.
-Skript `audit_log.py` přepis bez `before` ani nezapíše.
+Větev A přepisuje existující záznam: hodnoty z `<typ>_get` ulož do audit logu jako `before` (viz [Audit log](#audit-log)).
 
-**Větev B — nový telefonát.** Ve všech ostatních případech:
+**Větev A2: naplánovaná Událost** (tvrdé pravidlo 7). Typ aktivity přes MCP změnit nejde. Do Události **nic nezapisuj**
+a v náhledu nabídni (formát v kroku 8):
+
+- **a) převod v UI (výchozí):** uživatel v Raynetu přehodí Událost na Schůzku. Převod vytvoří **novou Schůzku s novým id**
+  (název, čas, účastníci i případný výsledek se přenesou) a Událost zanikne; `event_get` na staré id pak vrací
+  **502 Bad Gateway**, ne „nenalezeno“. Schůzku proto znovu dohledej přes `activity_list(companyId=<id>, entityType="meeting")`
+  v okně dne hovoru a pokračuj větví A (`meeting_update`).
+- **b) nová Schůzka:** když uživatel převod dělat nechce, `meeting_create` (stejný název a čas, `company`, klient v `participants`,
+  `status="COMPLETED"`, `solution`, štítek `AI zápis`), pak `meeting_update(id, completed=<konec>)` bez `status`. Událost
+  **neruš** (zrušení ji smaže i v Google kalendáři), jen ji v souhrnu uveď k ručnímu smazání.
+
+**Větev B: nová realizovaná aktivita** (telefonát; u osobní nebo online schůzky `meeting_create`):
 
 ```
 phonecall_create(
-  title        = <název nahrávky, očištěný>,
-  owner        = 2,
-  company      = <clientId>,
-  businessCase = <bcId nebo vynech>,
-  status       = "COMPLETED",
-  scheduledFrom = <začátek, 'yyyy-MM-dd HH:mm'>,
-  scheduledTill = <konec>,
-  solution     = <HTML shrnutí>,
-  description  = <HTML kontext, volitelně>
+  title, owner=<krok 0>, company=<id> nebo lead=<id>, businessCase=<id nebo vynech>,
+  status="COMPLETED", scheduledFrom=<začátek>, scheduledTill=<konec>,
+  solution=<HTML zápis>, tags="AI zápis"
 )
+phonecall_update(id, completed=<konec>)          ← bez status; create nastaví completed na čas zápisu
 ```
 
-U nového zájemce pošli `lead=<leadId>` místo `company` — klient zatím neexistuje.
+Telefonát ani schůzka nemají pole `person`, kontaktní osobu navaž přes `participants`. Neposílej `completed` a `status` v jednom volání.
 
-**Větev C — soukromý hovor** (krok 3): `phonecall_create` s `personal=true`,
-`category=112` (soukromá aktivita), `owner=2`, `status="COMPLETED"` a časy — **bez**
-`company`, `description` a `solution`. Název krátký a neutrální („Soukromý hovor",
-„Lékař"), nesmí prozradit obsah. Podrobně: `raynet-reference.md`, *Soukromé aktivity*.
+**Vlastník klienta musí zápis vidět.** Když vlastník klienta (`company.owner`, poradce) není ten, kdo zapisuje, přidej ho
+do `participants` jako `{person: <owner id>}`. Jinak zápis ve svém přehledu neuvidí (Adam, 1. 10. 2026). U větve A pošli
+celý seznam: stávající účastníky s jejich `id` + vlastníka.
 
-Poznámky, které ušetří chybu:
+### 10. Aktualizuj kartu OP
 
-- `owner` je povinný a nemá default. Adam Pospíšil = **2**.
-- `status="COMPLETED"` přepíše `completed` server-side. **Neposílej `completed`
-  zároveň se `status`** — vyhraje `status` a tvoje hodnota se zahodí.
-- Telefonát **nemá pole `person`**, CRM to strukturálně zakazuje. Kontaktní osobu
-  navaž přes `participants`.
-- Zápisové nástroje Raynetu běží na dva kroky: první volání vrátí náhled
-  a `confirmToken`, druhé se stejnými argumenty plus tokenem zápis provede.
-  Token platí 60 sekund a **nikdy se nevymýšlí**.
+Jen když se změnil stav případu (vždy u šablony L). `businessCase_get` → sestav kartu podle šablony → `businessCase_update(description=…)`.
+Ruční text, který v popisu napsal člověk, **zachovej** pod nadpisem „Původní poznámky“. „Klíčová rozhodnutí“ jen doplňuj.
+Pole OP (banka, výše, LTV…) neměň. Výši OP (`totalAmount`) jen na výslovný pokyn, např. „hodnota OP = 65 % z odhadu“
+(odhad bývá jen v PDF příloze e-mailu, kterou MCP nepřečte: zeptej se na částku).
 
-Na konec `description` přidej stopu ke zdroji, ať je záznam dohledatelný:
+### 11. Doplň kartu klienta (maximum údajů)
 
-```html
-<p>— Zdroj: Pocket recording &lt;recordingId&gt; —</p>
-```
+Na kartu klienta patří **maximum toho, co z hovoru jistě plyne** a platí napříč případy. Jedno `company_update` po potvrzení:
 
-Po každém zápisu — i po každém zamítnutém návrhu — zapiš řádek do audit logu
-(viz [Audit log](#audit-log)).
+- **standardní pole:** e-mail a telefon, adresa bydliště, IČO a DIČ (OSVČ), plátce DPH, zdroj kontaktu, tipař (`category`,
+  určuje dělení provize, proto jen prázdné a výslovně jmenovaný tipař, jinak se zeptej), sociální sítě;
+- **vlastní pole:** počet dětí, zaměstnavatel, pozice, nájmy v DP, čistý nájem;
+- **Profil klienta v `notice`:** osoba a domácnost, vazby (spolužadatel, firma), příjmy, nemovitosti, závazky, konce fixací,
+  cíle, servisní příležitosti, preferovaná komunikace. Ruční text zůstane pod „Původní poznámky“.
 
-### 10. Navazující aktivity
+Před zápisem `company_get`. Prázdné doplň, existující přepiš jen jistou hodnotou a změnu „staré → nové“ ukaž v náhledu.
+RČ a číslo účtu jen z dokumentu (tvrdé pravidlo 5). Co MCP neumí (jméno a příjmení zvlášť, titul, datum narození, příznak fyzické osoby), uveď v souhrnu
+jako „doplnit v UI“. Pole, klíče a šablona profilu: `references/sablony-zapisu.md`, „Karta klienta“.
 
-`search_pocket_actionitems(recordingDateFrom=…, recordingDateTo=…)` vrátí úkoly,
-které Pocket z hovoru vytěžil. Filtruj na `recordingId` zpracovávané nahrávky.
+### 12. Souhrnný úkol
 
-| Pocket `actionType` | Co udělat |
-|---|---|
-| `create_reminder` s termínem | `task_create` (`deadline` povinný) |
-| `create_reminder` = zavolat | `phonecall_create(status="SCHEDULED")` |
-| `draft_email` | **koncept e-mailu**, viz níže |
-| `send_message` | text zprávy vypiš v souhrnu připravený ke zkopírování (SMS/WhatsApp přes MCP poslat nejde) |
+Drobnosti z hovoru jdou do **jednoho úkolu** (checklist: kdo · co · do kdy). Samostatný úkol jen pro věc s vlastním termínem
+a řešitelem, kterou je potřeba hlídat zvlášť. Co dodá klient, je v zápisu a v návrhu e-mailu, ne v úkolech.
 
-Zakládej jen položky s `assignee: "me"` a `status: "TODO"`. To, co má udělat klient,
-do CRM jako úkol nepatří.
+Úkol navrhuj jen u **aktivního případu s kroky poradce s termínem**. Jinak stačí „Další kroky“ v zápisu. Při revizi 1. 10. 2026
+Adam ponechal navržený úkol jen u 1 ze 7 hovorů.
 
-Po zápisu uzavři smyčku v Pocketu:
-`update_pocket_actionitem(actionItemId=…, status="COMPLETED")`.
-Priorita se při čtení vrací malými písmeny, při zápisu vyžaduje velká.
+- `task_create(title, deadline, owner=<krok 0>, company=<id>, businessCase=<id>, description=<checklist + návrh e-mailu>, tags="AI zápis")`.
+- Řešitel jiný než zapisující: po založení `task_get` a přepsat osobu u druhého účastníka v `participants`
+  (`resolverPerson` nefunguje). Výsledek ověř přes `task_get`.
+- Návrh e-mailu klientovi patří do popisu úkolu po úvodní schůzce, po nabídce a vždy, když v hovoru zazní „pošlu vám…“.
+  Když uživatel chce e-mail „sem do chatu“, dej ho do chatu ke zkopírování (Adam, 12. 10. 2026). Co se vyřešilo na místě
+  (např. faktura zaplacená při schůzce), do e-mailu nepiš.
+- **Návrh e-mailu** piš podle `references/email-style.md` (stavba a formulace z Adamových e-mailů a pravidla naučená z jeho úprav).
+  Podklady chtěj jen ty, které chybí: co je potřeba podle typu případu a kde zjistit, co už přišlo, je v `references/podklady.md`.
+  Co si poradce zajistí sám (LV, kupní smlouva z katastru), po klientovi nechtěj.
+- **Adresu příjemce ber z Raynetu**, ne z Pocketu: Pocket v `payload.email.to` adresy vymýšlí nebo místo adresy dá jen jméno.
+- Když uživatel chce koncept **do pošty**, vyrob `.eml` přes `scripts/make_email_draft.py`. Hlavička `X-Unsent: 1` zajistí, že se
+  v Apple Mail otevře jako koncept k úpravě, ne jako přijatá zpráva jen pro čtení. Nic se neodesílá. Podpis je
+  v `assets/signature.txt` (Adamův; kolega si ho nahradí svým).
+- Když uživatel návrh upraví a řekne co (nebo vloží finální verzi), připiš z rozdílu pravidlo do *Naučená pravidla*
+  v `email-style.md`.
+- Action items z Pocketu (`search_pocket_actionitems`, filtr na `recordingId`) slouč do checklistu. Po zápisu je v Pocketu uzavři
+  (`update_pocket_actionitem(status="COMPLETED")`; priorita se při zápisu píše velkými písmeny).
 
-#### Podklady od klienta
+### 13. Posun fáze OP (jen návrh)
 
-Řeší-li se v hovoru úvěr, zjisti, co už od klienta je a co chybí, a chybějící
-vyžádej e-mailem. Seznam podkladů podle případu a celý postup:
-**`references/podklady.md`**. Ve zkratce:
+Když hovor jasně posunul případ (nabídka odeslána → „Nabídnuto“, žádost podána → „Podaná žádost + EPP 2.0“, schváleno, podepsáno),
+navrhni posun v náhledu. Po potvrzení `businessCase_update(businessCasePhase=<id>)`. Id fází: `references/raynet-reference.md`.
+Nic jiného na OP neměň. Výjimka: k návrhu **Prohry** (fáze 5) patří i kategorie prohry (`losingCategory`) a jedna věta důvodu
+(`losingReason`); „jiná“ nikdy bez důvodu. Číselník: `references/raynet-reference.md`.
 
-1. **Co je potřeba** — podle typu příjmu, účelu úvěru a fáze případu.
-2. **Co už je** — oddíl „PODKLADY OD KLIENTA" v popisu OP, e-maily od klienta
-   v Raynetu (`activity_list(companyId)` → řádky `_entityName: "Email"`) a co
-   zaznělo v hovoru. Jako přílohy v Raynetu ani na Drive doklady nejsou.
-3. **Koncept e-mailu** jen s tím, co chybí. Co si Adam zajistí sám (LV, kupní
-   smlouva z katastru), po klientovi nechtěj.
-4. **Zapiš do popisu OP**, co bylo vyžádáno — `businessCase_update` přepisuje celý
-   popis, takže načti, připoj, a původní popis ulož do logu jako `before`.
+### 14. Shrň, co vzniklo
 
-#### E-maily
+Tabulka: co bylo zapsáno nebo dokončeno (id), karta OP, karta klienta, úkol, fáze, co přeskočeno a proč, co zůstalo na uživateli.
+V prostředí bez trvalého disku (chat na claude.ai) sem vypiš i řádky audit logu, jinak se ztratí.
 
-E-mail se **nikdy neodesílá** — jen připraví. Uživatel ho upraví a odešle sám.
+## Příprava před schůzkou (ranní běh)
 
-```bash
-python3 scripts/make_email_draft.py --to klient@example.cz --subject "…" --body telo.md \
-        [--cc kolega@egfin.cz] [--attach soubor.pdf]
-```
+Hermes ráno, nebo pokyn „připrav dnešní schůzky":
 
-Vznikne `.eml` s hlavičkou `X-Unsent: 1`, na které záleží: bez ní Apple Mail otevře
-soubor jako **přijatou** zprávu jen pro čtení a text se musí kopírovat jinam. S ní se
-otevře jako koncept v okně pro psaní, kde jde všechno upravit. Podpis se připojí sám.
-
-- **Adresu příjemce ber z Raynetu** (`primaryAddress.email` klienta), ne z Pocketu.
-  Pocket v `payload.email.to` adresy vymýšlí — v datech je `josef.novotny@example.com`
-  nebo místo adresy jen jméno. Když v Raynetu adresa není, zeptej se.
-- **Před psaním otevři `references/email-style.md`** — stavba, formulace a pravopis
-  podle Adamových skutečných e-mailů. Návrh od Pocketu ber jako obsahový podklad,
-  ne jako hotový text.
-- Když uživatel koncept upraví a řekne co (nebo vloží finální verzi), vytáhni
-  z rozdílu pravidlo a připiš ho do sekce *Naučená pravidla* v `email-style.md`.
-  Tak se návrhy postupně blíží tomu, jak píše. (Kde jsou soubory skillu jen
-  pro čtení, pravidlo aspoň vypiš a navrhni ho doplnit.)
-
-### 11. Shrň, co vzniklo
-
-Vypiš, co bylo založeno (s id), co přeskočeno a proč, a co zůstalo na uživateli
-(typicky převod nového leadu na klienta v Raynet UI). U dávky stačí tabulka.
+1. `activity_list(ownerId=<krok 0>, scheduledFrom=<dnes 00:00>, scheduledTill=<dnes 23:59>)`: schůzky, telefonáty
+   **i události** s klientem. U Události v náhledu doporuč převod na Schůzku ještě před schůzkou (tvrdé pravidlo 7), ať jde
+   zápis po schůzce rovnou do ní.
+2. U každé: karta OP (otevřené body, rozpětí bonity), poslední 2–3 aktivity, otevřené úkoly.
+3. **Připoj** na konec `description` blok „PŘÍPRAVA (AI, <datum>)“ podle šablony (Doptat · Ověřit · Mít po ruce). Původní text,
+   pozvánku a odkaz na Meet nech beze změny. Když blok s dnešním datem už existuje, nepřidávej ho.
+4. Náhled všech příprav a jedno potvrzení na celek.
 
 ## Když něco nesedí
 
 | Situace | Reakce |
 |---|---|
-| Klient nenalezen, ale měl by tam být | Zastav a zeptej se — nejspíš selhalo párování |
-| Nový zájemce | Navrhni lead, ne klienta přes `company_create` |
-| Víc kandidátů na klienta | Zastav, předlož seznam |
-| Hovor se týká víc klientů najednou | Nezapisuj, přeskoč s důvodem — typicky hovor s bankéřem |
-| Případ z hovoru není mezi OP klienta | Zeptej se; nesahej po jiném OP jen proto, že je po ruce |
-| Backend vrátí chybu u id | Nezkoušej jiné id naslepo — chyba obvykle vyjmenuje platná |
-| `confirmToken` vypršel | Zopakuj náhled, získej nový token |
-| Nahrávka bez obsahu | Přeskoč, zmiň v souhrnu |
-| Raynet nedostupný | Zastav celou dávku, nic nezapisuj napůl |
-| Klient má v CRM duplicitu | Zastav, předlož oba záznamy — nevybírej sám |
+| Klient nenalezen | navrhni lead; klienta fyzickou osobu zakládá člověk v UI |
+| Víc kandidátů na klienta, OP nebo aktivitu k dokončení | zastav, předlož seznam, nech vybrat |
+| Bankéřský hovor, část nejde přiřadit | zapiš jen jisté části, na zbytek se zeptej |
+| Případ z hovoru není mezi OP klienta | zeptej se, nesahej po jiném OP |
+| Pocket prohodil mluvčí | oprav podle obsahu, nejisté označ `[k ověření]`; přejmenování mluvčích nech na uživateli (MCP to neumí) |
+| Shrnutí Pocketu tvrdí něco jiného než přepis | platí přepis; rozdíl uveď v náhledu („Chyby Pocketu“) |
+| Naplánovaná aktivita je Událost | do Události nezapisovat, větev A2 (krok 9) |
+| `*_get` na známé id vrací 502 Bad Gateway | aktivita mohla být převedena (Událost → Schůzka) nebo smazána: dohledej ji přes `activity_list(companyId=…)`, id neopakuj |
+| Backend vrátí chybu u id | nezkoušej jiné id naslepo, chyba vyjmenuje platná |
+| `confirmToken` vypršel | zopakuj náhled, získej nový token |
+| Raynet nedostupný | zastav celou dávku, nic nezapisuj napůl |
 
-## Režimy potvrzování
-
-Každý typ akce má svůj režim. Všechno, co mění CRM, začíná na potvrzování — a vypíná
-se až tehdy, když data ukážou, že to běží dobře. Ne dřív.
-
-| Akce | Režim | Proč |
-|---|---|---|
-| Nový realizovaný telefonát | potvrdit | první kandidát na automatiku — chybný záznam se snadno opraví |
-| Soukromý hovor jako osobní aktivita | potvrdit | jde o soukromí — plést se tu nesmí |
-| Dokončení naplánovaného telefonátu | potvrdit | přepisuje existující záznam |
-| Nový lead | potvrdit | nový zájemce v CRM |
-| Nový OP | potvrdit | spouští automatiku Raynetu (úkoly) |
-| Zápis do evidence podkladů v OP | potvrdit | přepisuje popis OP |
-| Úkol, naplánovaný telefonát | potvrdit | |
-| Koncept e-mailu | bez potvrzení | nic se neodesílá, jen vznikne soubor k úpravě |
-| Uzavření action itemu v Pocketu | bez potvrzení | navazuje na už potvrzený zápis |
-
-Režim mění jen uživatel. Podkladem je:
-
-```bash
-python3 scripts/audit_log.py stats
-```
-
-U každého typu akce ukáže, kolik návrhů prošlo beze změny, a upozorní, když
-z posledních 20 byl opraven nejvýš jeden. Akce, které přepisují existující záznam,
-nech na potvrzení déle než ty, které jen zakládají nové: chybný nový záznam se
-opraví, přepsaný původní obsah se vrací jen z logu.
+Rate limit je 24 000 requestů denně pro MCP. `rate_limit_status` se do limitu nepočítá.
 
 ## Audit log
 
-Každou akci zapiš do logu — i přeskočení, eskalaci a zamítnutý návrh. Když skill
-udělá desítky akcí denně, jiná cesta, jak zpětně zjistit, co kdy zapsal a proč,
-neexistuje.
+Každou akci zapiš do logu: zápis, dokončení, přeskočení, eskalaci i zamítnutý návrh. Štítek `AI zápis` říká, *že* záznam vznikl
+ze skillu; log říká, *co* se kdy změnilo a jak to vypadalo předtím. Přes MCP neexistuje undo, takže u přepisu je uložený původní
+stav jediná cesta zpět.
 
 ```bash
-echo '{"action": "create_phonecall", "outcome": "confirmed", "entity_id": 35927}' | python3 scripts/audit_log.py append
+echo '{"action": "complete_activity", "outcome": "confirmed", "entity": "meeting", "entity_id": 12345,
+       "client_id": 999, "recording_id": "…", "before": {…}, "after": {…}}' | python3 scripts/audit_log.py append
 ```
 
-| Pole | Obsah |
+| Pole | Hodnoty |
 |---|---|
-| `action` | `create_phonecall`, `create_personal_activity`, `complete_phonecall`, `create_scheduled_phonecall`, `create_task`, `create_lead`, `create_business_case`, `update_business_case`, `draft_email`, `complete_action_item`, `skip`, `escalate` |
-| `outcome` | `confirmed` · `edited` (uživatel něco opravil) · `rejected` · `auto` · `skipped` |
-| `mode` | `confirm` (výchozí) nebo `auto` |
-| vazby | `recording_id`, `client_id`, `business_case_id`, `entity`, `entity_id` |
-| `before`, `after` | stav polí před a po změně — **u přepisů je `before` povinné** |
-| `note` | proč — hlavně u `skip` a `escalate` |
+| `action` | `create_activity`, `complete_activity`, `update_activity`, `create_task`, `create_lead`, `create_business_case`, `update_business_case`, `update_company`, `draft_email`, `complete_action_item`, `skip`, `escalate` |
+| `outcome` | `confirmed` · `edited` (uživatel v náhledu něco opravil) · `rejected` · `auto` · `skipped` |
+| `before` | stav polí před změnou, **povinný u přepisů** (`complete_activity`, `update_*`): bez něj skript zápis odmítne |
 
-Log leží v `~/.pocket-to-raynet/audit.jsonl` (nebo v `$POCKET_RAYNET_LOG`), záměrně
-mimo repozitář — obsahuje jména klientů. Prohlížení: `audit_log.py show --date …`.
-V prostředí bez trvalého disku (chat na claude.ai) se log nezachová; tam zapsané
-řádky vypiš na konci do souhrnu.
+Log je v `~/.pocket-to-raynet/audit.jsonl` (nebo `$POCKET_RAYNET_LOG`), mimo repozitář, protože obsahuje jména klientů.
+`audit_log.py stats` ukáže u každého typu akce podíl návrhů potvrzených beze změny. Je to podklad, kdyby se jednou mělo
+potvrzování někde zjednodušit; tvrdé pravidlo 6 tím neplatí o nic méně a rozhoduje jen uživatel.
 
 ## Reference
 
-Načti podle potřeby, ne dopředu:
+Načti podle potřeby:
 
-- **`references/raynet-reference.md`** — číselníky, id fází OP, kategorie aktivit,
-  povinná pole jednotlivých entit, sémantika přepisu u `tags` a `participants`.
-  Otevři při práci s kategoriemi, fázemi OP nebo při chybě validace.
-- **`references/pocket-reference.md`** — tvary odpovědí obou režimů hledání,
-  formáty `recordingId`, limity action items. Otevři při nečekaném tvaru dat.
-- **`references/html-formatting.md`** — co Raynet v HTML polích unese a co ne.
-  Otevři při ručním sestavování HTML mimo skript.
-- **`references/email-style.md`** — jak Adam píše e-maily, včetně naučených pravidel.
-  Otevři před každým konceptem e-mailu.
-- **`references/podklady.md`** — jaké podklady chtít podle typu případu, kde zjistit,
-  co už přišlo, a jak vést evidenci v popisu OP. Otevři, když se v hovoru řeší úvěr.
+- **`references/sablony-zapisu.md`**: šablony S / M / L, karta OP, bonita po bankách, bankéř, souhrnný úkol, příprava, vlastní pole klienta.
+  Otevři pokaždé před psaním textu.
+- **`references/raynet-reference.md`**: uživatelé, typy aktivit (Událost bez Výsledku), fáze OP, kategorie, povinná pole,
+  vlastní pole, pasti (completed, řešitel úkolu, Google kalendář).
+- **`references/pocket-reference.md`**: tvary odpovědí Pocketu, formáty `recordingId`, limity action items.
+- **`references/html-formatting.md`**: co Raynet v HTML polích uloží (tabulky a `<pre>` ne).
+- **`references/email-style.md`**: jak Adam píše e-maily, včetně pravidel naučených z jeho úprav. Otevři před návrhem e-mailu.
+- **`references/podklady.md`**: jaké podklady chtít podle typu případu a kde zjistit, co už přišlo.
+- **`docs/NAVRH-ZAPISY.md`** (v repozitáři): rozhodnutí Adama a jejich důvody. **`docs/RAYNET-OPTIMALIZACE.md`**: doporučené
+  nastavení Raynetu.
 
-Skripty ve `scripts/` potřebují jen Python 3 se standardní knihovnou.
+Skripty ve `scripts/` potřebují jen Python 3 se standardní knihovnou: `match_name.py` (párování jmen), `md_to_raynet_html.py`
+(Markdown → HTML, redakce), `make_email_draft.py` (koncept e-mailu), `audit_log.py` (audit log).

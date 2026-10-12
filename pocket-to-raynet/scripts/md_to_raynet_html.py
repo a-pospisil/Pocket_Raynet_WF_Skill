@@ -12,6 +12,7 @@ Použití:
     python3 md_to_raynet_html.py vstup.md
     python3 md_to_raynet_html.py < vstup.md
     cat summary.md | python3 md_to_raynet_html.py --strip-ids
+    python3 md_to_raynet_html.py vstup.md --check   # režim „doslovně Pocket“: ověří shodu textu
 """
 
 import argparse
@@ -149,6 +150,49 @@ def convert(md: str, do_redact: bool = True) -> str:
     return "\n".join(out)
 
 
+def _norm(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def md_plain(md: str) -> str:
+    """Čistý text Markdownu bez značek (stejná pravidla jako convert/inline)."""
+    lines = []
+    for raw in md.splitlines():
+        line = raw.strip()
+        if not line or re.fullmatch(r"[-*_]{3,}", line):
+            continue
+        line = re.sub(r"^#{1,6}\s+", "", line)
+        line = re.sub(r"^(?:[-*+]|\d+[.)])\s+", "", line)
+        line = re.sub(r"\[([^\]]+)\]\((https?://[^\s)]+)\)", r"\1", line)
+        line = line.replace("***", "").replace("**", "")
+        line = re.sub(r"(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])", r"\1", line)
+        line = re.sub(r"`(.+?)`", r"\1", line)
+        lines.append(line)
+    return _norm(" ".join(lines))
+
+
+def html_plain(text: str) -> str:
+    """Čistý text HTML bez značek. Inline značky zmizí beze stopy, blokové oddělí mezerou."""
+    text = re.sub(r"</?(?:b|i|code|a|strong|em|span)\b[^>]*>", "", text)
+    return _norm(html.unescape(re.sub(r"<[^>]+>", " ", text)))
+
+
+def check_identical(md: str, result: str, do_redact: bool = True) -> tuple[bool, str]:
+    """Ověří, že převod nezměnil text (režim „doslovně Pocket“).
+
+    Porovnává se s Markdownem po odstranění <pocket:*> bloků a po redakci,
+    protože ty dvě úpravy jsou záměrné.
+    """
+    source = strip_pocket_blocks(md)
+    if do_redact:
+        source = redact(source)
+    a, b = md_plain(source), html_plain(result)
+    if a == b:
+        return True, "OK: text je shodný s originálem"
+    i = next((k for k, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
+    return False, f"ROZDÍL na znaku {i}:\n  originál: …{a[max(0, i - 40):i + 40]}…\n  převod:   …{b[max(0, i - 40):i + 40]}…"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Převod Pocket Summary (Markdown) na HTML pro Raynet."
@@ -163,18 +207,30 @@ def main() -> int:
         action="store_true",
         help="ponechá rodná čísla a čísla účtů (výchozí je odstranit)",
     )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="ověří, že text bez značek je shodný s originálem (režim „doslovně Pocket“); "
+        "výsledek kontroly jde na stderr, při rozdílu návratový kód 1",
+    )
     args = parser.parse_args()
 
     md = open(args.soubor, encoding="utf-8").read() if args.soubor else sys.stdin.read()
 
     result = convert(md, do_redact=not args.no_redact)
 
+    status = 0
+    if args.check:
+        ok, message = check_identical(md, result, do_redact=not args.no_redact)
+        print(message, file=sys.stderr)
+        status = 0 if ok else 1
+
     if args.recording_id:
         rid = html.escape(args.recording_id, quote=False)
         result += f"\n<p>— Zdroj: Pocket recording {rid} —</p>"
 
     print(result)
-    return 0
+    return status
 
 
 if __name__ == "__main__":

@@ -33,20 +33,20 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 ACTIONS = {
-    "create_phonecall",            # nový realizovaný telefonát
-    "create_personal_activity",    # soukromý hovor jako osobní aktivita
-    "complete_phonecall",          # dokončení naplánovaného — PŘEPIS
-    "create_scheduled_phonecall",  # naplánovaný telefonát (follow-up)
-    "create_task",
-    "create_lead",                 # nový zájemce (fyzickou osobu jako klienta MCP neumí)
-    "create_business_case",
-    "update_business_case",        # změna OP, i zápis do evidence podkladů — PŘEPIS
-    "draft_email",                 # jen soubor, nic se neodesílá
-    "complete_action_item",        # uzavření action itemu v Pocketu
-    "skip",                        # nahrávka vědomě nezapsána
-    "escalate",                    # zastaveno, rozhoduje uživatel
+    "create_activity",       # nová realizovaná aktivita — telefonát / schůzka (krok 9, větev B a A2b)
+    "complete_activity",     # dokončení naplánované aktivity (krok 9, větev A) — PŘEPIS
+    "update_activity",       # jiná změna aktivity: completed, příprava v description — PŘEPIS
+    "create_task",           # souhrnný úkol (krok 12)
+    "create_lead",           # nový zájemce, který v CRM není (krok 4)
+    "create_business_case",  # výjimka: běžící žádost u banky bez OP (krok 6)
+    "update_business_case",  # karta OP, posun fáze (kroky 10 a 13) — PŘEPIS
+    "update_company",        # karta klienta (krok 11) — PŘEPIS
+    "draft_email",           # návrh e-mailu; nic se neodesílá
+    "complete_action_item",  # uzavření action itemu v Pocketu
+    "skip",                  # nahrávka vědomě nezapsána
+    "escalate",              # zastaveno, rozhoduje uživatel
 }
-OVERWRITES = {"complete_phonecall", "update_business_case"}
+OVERWRITES = {"complete_activity", "update_activity", "update_business_case", "update_company"}
 
 OUTCOMES = {
     "confirmed",  # navrženo a potvrzeno beze změny

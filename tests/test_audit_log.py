@@ -32,7 +32,7 @@ class Log(unittest.TestCase):
         return code, err.getvalue()
 
     def test_zapis_a_cteni(self):
-        code, _ = self.append({"action": "create_phonecall", "outcome": "confirmed",
+        code, _ = self.append({"action": "create_activity", "outcome": "confirmed",
                                "entity": "phonecall", "entity_id": 35927, "client_id": 54})
         self.assertEqual(code, 0)
         rows = audit_log.read_all()
@@ -41,8 +41,8 @@ class Log(unittest.TestCase):
         self.assertIn("ts", rows[0])
 
     def test_prepis_bez_puvodniho_stavu_neprojde(self):
-        # Dokončení naplánovaného hovoru přepisuje existující záznam.
-        code, err = self.append({"action": "complete_phonecall", "outcome": "confirmed",
+        # Dokončení naplánované aktivity přepisuje existující záznam.
+        code, err = self.append({"action": "complete_activity", "outcome": "confirmed",
                                  "entity": "phonecall", "entity_id": 30517})
         self.assertEqual(code, 1)
         self.assertIn("before", err)
@@ -50,7 +50,7 @@ class Log(unittest.TestCase):
 
     def test_prepis_s_puvodnim_stavem_projde(self):
         code, _ = self.append({
-            "action": "complete_phonecall", "outcome": "confirmed",
+            "action": "complete_activity", "outcome": "confirmed",
             "entity": "phonecall", "entity_id": 30517,
             "before": {"status": "SCHEDULED", "scheduledFrom": "2026-09-22 14:30"},
             "after": {"status": "COMPLETED", "scheduledFrom": "2026-09-22 15:28"},
@@ -59,7 +59,7 @@ class Log(unittest.TestCase):
 
     def test_zamitnuty_prepis_nepotrebuje_puvodni_stav(self):
         # Nic se nezměnilo, není co vracet.
-        code, _ = self.append({"action": "complete_phonecall", "outcome": "rejected"})
+        code, _ = self.append({"action": "complete_activity", "outcome": "rejected"})
         self.assertEqual(code, 0)
 
     def test_zapis_do_evidence_podkladu_je_prepis(self):
@@ -69,10 +69,16 @@ class Log(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertIn("before", err)
 
-    def test_novy_lead_a_soukromy_hovor(self):
+    def test_karta_klienta_je_prepis(self):
+        code, err = self.append({"action": "update_company", "outcome": "confirmed",
+                                 "entity": "company", "entity_id": 999})
+        self.assertEqual(code, 1)
+        self.assertIn("before", err)
+
+    def test_novy_lead_a_preskoceni(self):
         code, _ = self.append([
             {"action": "create_lead", "outcome": "confirmed", "entity": "lead", "entity_id": 301},
-            {"action": "create_personal_activity", "outcome": "confirmed", "entity": "phonecall"},
+            {"action": "skip", "outcome": "skipped", "note": "osobní hovor"},
         ])
         self.assertEqual(code, 0)
 
@@ -81,8 +87,8 @@ class Log(unittest.TestCase):
         self.assertEqual(code, 1)
 
     def test_kandidat_na_automaticky_rezim(self):
-        batch = [{"action": "create_phonecall", "outcome": "confirmed"} for _ in range(19)]
-        batch.append({"action": "create_phonecall", "outcome": "edited"})
+        batch = [{"action": "create_activity", "outcome": "confirmed"} for _ in range(19)]
+        batch.append({"action": "create_activity", "outcome": "edited"})
         self.append(batch)
         out = io.StringIO()
         with redirect_stdout(out):
@@ -90,7 +96,7 @@ class Log(unittest.TestCase):
         self.assertIn("kandidát na automatický režim", out.getvalue())
 
     def test_malo_dat_neni_kandidat(self):
-        self.append([{"action": "create_phonecall", "outcome": "confirmed"} for _ in range(5)])
+        self.append([{"action": "create_activity", "outcome": "confirmed"} for _ in range(5)])
         out = io.StringIO()
         with redirect_stdout(out):
             audit_log.cmd_stats(type("A", (), {"since": None})())

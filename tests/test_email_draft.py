@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.join(HERE, "..", "pocket-to-raynet", "scripts"))
 
 import make_email_draft as m  # noqa: E402
 
-BODY = """Dobrý den, pane Balente,
+BODY = """Dobrý den, pane Nováku,
 
 navazuji na náš dnešní hovor. Poprosím Vás o následující podklady:
 
@@ -62,8 +62,8 @@ class Koncept(unittest.TestCase):
             f.write(b"%PDF-1.4 test")
         try:
             msg = parse(m.build(["klient@example.cz"], "Podklady", BODY,
-                                cc=["martin.fiedor@egfin.cz"], attachments=[f.name]))
-            self.assertEqual(msg["Cc"], "martin.fiedor@egfin.cz")
+                                cc=["kolega@egfin.cz"], attachments=[f.name]))
+            self.assertEqual(msg["Cc"], "kolega@egfin.cz")
             names = [p.get_filename() for p in msg.iter_attachments()]
             self.assertIn(os.path.basename(f.name), names)
         finally:
@@ -71,8 +71,8 @@ class Koncept(unittest.TestCase):
 
     def test_citlive_udaje_se_v_emailu_neredigují(self):
         # V CRM se r.č. maže, ale e-mail bance ho může potřebovat.
-        msg = parse(m.build(["banka@example.cz"], "Žádost", "Klient r.č. 880916/7027."))
-        self.assertIn("880916/7027", msg.get_body(("plain",)).get_content())
+        msg = parse(m.build(["banka@example.cz"], "Žádost", "Klient r.č. 900101/0000."))
+        self.assertIn("900101/0000", msg.get_body(("plain",)).get_content())
 
 
 if __name__ == "__main__":

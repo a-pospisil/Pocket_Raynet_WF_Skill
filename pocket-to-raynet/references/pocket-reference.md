@@ -69,9 +69,9 @@ Navíc pole: `metadata { matchType, source }`, `sectionStartMs`, `sectionEndMs`,
 
 1. **Vrací duplicitní řádky téže nahrávky.** Měřeno: 8 řádků = 4 unikátní
    `recordingId`, jedna nahrávka se opakovala 4× se shodným skóre. Vždy deduplikuj.
-2. **Na hledání podle jména klienta se nedá spolehnout.** Dotaz „Peter Balent
+2. **Na hledání podle jména klienta se nedá spolehnout.** Dotaz „<jméno klienta>
    financování pozemku na Slovensku" nenašel nahrávku s názvem
-   „Konzultace a výpočet [Peter Balent]". Všechny zásahy se vrátily jako
+   „Konzultace a výpočet [<jméno klienta>]". Všechny zásahy se vrátily jako
    `matchType: "bm25"`, tedy keyword, ne vektorově.
 
 Query režim používej na dohledání nahrávky podle **tématu**, ne podle osoby.
@@ -97,9 +97,10 @@ Odstraní je `scripts/md_to_raynet_html.py`.
 
 **`audioUrl.signed_url` expiruje za 3600 s.** Jako odkaz v CRM se proto nehodí.
 
-**Trvalou kopii má Google Drive.** Pocket každou nahrávku sám exportuje na Drive
-účtu `adampospisilu@gmail.com`: složka se stejným názvem jako nahrávka, uvnitř
-`transcript.md`, `audio.ogg` a podsložky `Notes - <datum>`. Ověřeno 27. 9. 2026.
+**Trvalou kopii má Google Drive.** Pocket každou nahrávku sám exportuje na Google Drive
+účtu, ke kterému je připojený (každý poradce na svůj): složka se stejným názvem jako
+nahrávka, uvnitř `transcript.md`, `audio.ogg` a podsložky `Notes - <datum>`.
+Ověřeno 27. 9. 2026.
 Názvy složek nejsou unikátní („Evergreen app call" je víckrát), takže nahrávku
 k nim páruj podle názvu **a** času vytvoření. Odkaz na složku jde přidat do stopy
 ke zdroji v `description` — na rozdíl od `signed_url` nevyprší.

@@ -6,12 +6,15 @@ Plný audit: `docs/AUDIT-POCKET-RAYNET.md` v repozitáři.
 ## Obsah
 
 - [Konstanty](#konstanty)
+- [Typy aktivit](#typy-aktivit)
 - [Stavy aktivit](#stavy-aktivit)
 - [Založení leadu](#založení-leadu)
 - [Soukromé aktivity](#soukromé-aktivity)
 - [Fáze obchodního případu](#fáze-obchodního-případu)
 - [Kategorie aktivit](#kategorie-aktivit)
+- [Číselníky klienta a prohry](#číselníky-klienta-a-prohry)
 - [Povinná pole při zakládání](#povinná-pole-při-zakládání)
+- [Vlastní pole](#vlastní-pole)
 - [Vazby mezi entitami](#vazby-mezi-entitami)
 - [Pasti, které nejsou vidět ze schématu](#pasti-které-nejsou-vidět-ze-schématu)
 - [Hledání a filtry](#hledání-a-filtry)
@@ -21,7 +24,8 @@ Plný audit: `docs/AUDIT-POCKET-RAYNET.md` v repozitáři.
 
 | Co | Hodnota |
 |---|---|
-| Adam Pospíšil — `owner` / user id | **2** |
+| Vlastník (`owner`) | **zjistit za běhu**: `user_info` → `username` → `person_list(email=…)` → `id` (Adam = 2) |
+| Uživatelé (id osoby) | Adam Pospíšil 2 · Michal Čakovský 9 · Eva Hofmanová 13 · Kateřina Háblová 21 · Martin Fiedor 42 (k 2026-10-01; další přes `person_list`) |
 | `securityLevel` „Sdílená" | 1 |
 | Jediný `businessCaseType` — „Úvěrový proces" | 64 |
 | Měna Kč (`currency`) | 40 |
@@ -30,6 +34,27 @@ Plný audit: `docs/AUDIT-POCKET-RAYNET.md` v repozitáři.
 
 Formát ISO bez milisekund je odmítnut. `2026-01-01T12:00:00+01:00` neprojde,
 `2026-01-01T12:00:00.000+01:00` ano.
+
+## Typy aktivit
+
+Ověřeno 12. 10. 2026 prvním ostrým zápisem ke klientovi.
+
+| Typ (`_entityName`) | MCP | Pole „Výsledek“ (`solution`) v UI | Pro AI zápis |
+|---|---|---|---|
+| Schůzka (`Meeting`) | `meeting_*` | ano | **ano** (osobní nebo online schůzka) |
+| Telefonát (`PhoneCall`) | `phonecall_*` | ano | **ano** (hovor) |
+| Událost (`Event`) | `event_*` | **ne** | **ne**: zápis v `solution` se na kartě klienta nezobrazí, časová osa ukáže jen název |
+| Úkol (`Task`) | `task_*` | – | jen souhrnný úkol (checklist + návrh e-mailu v `description`) |
+
+- **Typ přes MCP změnit nejde** (žádný nástroj). Převod dělá člověk v UI v detailu aktivity.
+- **Převod Událost → Schůzka v UI vytvoří novou Schůzku s novým id.** Přenese název, čas, klienta, účastníky, štítky
+  i `solution`, původní Událost zanikne. `event_get` na staré id pak vrací **502 Bad Gateway** (ne „nenalezeno“) a Událost
+  zmizí i z `activity_list`. Novou Schůzku najdeš přes `activity_list(companyId=…, entityType="meeting")`.
+- **Naplánované schůzky z kalendáře bývají Události.** 12. 10. 2026 byly všechny položky dne v kalendáři Adama typu `Event`,
+  nejspíš je zakládá obousměrná synchronizace s Google kalendářem `[k ověření]`. Postup skillu: `SKILL.md`, tvrdé pravidlo 7
+  a větev A2.
+- K ověření: dá se v nastavení synchronizace Google kalendáře zvolit import jako Schůzka? Umí REST API změnit typ aktivity?
+  Zachová převod v UI vazbu na událost v Google kalendáři?
 
 ## Stavy aktivit
 
@@ -98,20 +123,21 @@ chybu, která vyjmenuje platná — toho se dá využít místo hádání.
 
 ### Založení OP
 
+OP skill zakládá jen ve výjimce z kroku 6 (běžící žádost u banky bez OP), vždy po potvrzení:
+
 ```
 businessCase_create(
-  name             = "<typ úvěru> – <předmět>",   # „Hypotéka – koupě bytu Praha 3"
-  company          = <clientId>,                   # povinné, OP bez klienta nejde
-  businessCaseType = 64,                           # Úvěrový proces, jediný typ
-  category         = <116 | 184 | 189 | 169>,      # viz Kategorie OP
-  totalAmount      = <částka z hovoru, pokud zazněla>
+  name             = "<banka/produkt> – <popis>",  # OP se jmenují podle banky a produktu
+  company          = <clientId>,                    # povinné, OP bez klienta nejde
+  businessCaseType = 64,                            # Úvěrový proces, jediný typ
+  category         = <viz Kategorie OP>,
+  businessCasePhase= <id fáze>,                     # u běžící žádosti typicky 2 „Podaná žádost + EPP 2.0"
+  totalAmount      = <výše>,                        # a stejná částka do vlastního pole vyse_uveru
+  customFields     = {producent: <banka>, vyse_uveru: <výše>}   # klíče viz Vlastní pole
 )
 ```
 
-Fázi neposílej — nový OP dostane výchozí fázi pro daný typ, „Identifikace
-požadavku" (10); tak mají i všechny nové OP v datech. `status` se z fáze odvozuje
-a nastavit přímo nejde. Názvy v datech nejsou jednotné; formát `<typ> – <předmět>`
-odpovídá těm nejpopisnějším („Neúčelový úvěr – zástava byt Prokopova").
+Výši neznáš → zeptej se. `status` se z fáze odvozuje a nastavit přímo nejde.
 
 ### Automatika při založení OP
 
@@ -121,8 +147,8 @@ minutu vytvoří dva úkoly navázané na nový OP:
 - `Zaslat nabídku_ <název OP>` — priorita `CRITICAL`
 - `EPP 2 - připravit k žádosti <klient> <kód OP> <název OP>`
 
-Ověřeno na OP-26-0462 (Balent, 18. 9.) a OP-26-0480 (Macko, 22. 9.). Skill tyhle
-úkoly nezakládá — vznikly by dvakrát.
+Ověřeno na OP-26-0462 (18. 9.) a OP-26-0480 (22. 9.). Skill tyhle úkoly nezakládá
+ani do souhrnného úkolu nepřebírá — vznikly by dvakrát.
 
 ### Názvy OP
 
@@ -133,39 +159,21 @@ sám o sobě klienta neurčuje.
 
 ## Založení leadu
 
-Lead je v Raynetu vstupní bod pro nového zájemce. Na rozdíl od `company_create`
-umí fyzickou osobu (`leadPerson: true`).
+Povinná a vhodná pole jsou v [Povinná pole při zakládání](#povinná-pole-při-zakládání), zdroje kontaktu
+v [Číselníky klienta a prohry](#číselníky-klienta-a-prohry). Navíc:
 
-```
-lead_create(
-  topic         = "<Jméno Příjmení> – <požadavek>",   # povinné; „Jan Novák – hypotéka na byt"
-  firstName, lastName,
-  leadPerson    = true,
-  email, tel1,                  # jen co v hovoru opravdu zaznělo, nic nedomýšlet
-  contactSource = <id>,         # viz níže
-  category      = 194,          # Adam Pospíšil
-  owner         = 2,
-  priority      = "DEFAULT"     # ELeadPriority: MINOR / DEFAULT / CRITICAL
-)
-```
-
-`contactSource` (`raynet://codelist/contactSource`): 82 vlastní kontakt ·
-81 Doporučení (netipař) · 156 doporučení tipaře · 79 web/poptávka ·
-179 sociální sítě · 196 workshop. Soukromý hovor s požadavkem je typicky 82.
-
-`leadCategory` jsou jména poradců/tipařů (194 Adam Pospíšil, 164 Martin Kořenek,
-195 Bez tipaře, …) — stejná logika jako `category` u klientů.
-
-Klient z leadu vznikne **převodem v Raynet UI**. `lead_convert` přes MCP jen napojí
-lead na už existující firmu/osobu/OP a nic nezakládá, takže pro nového zájemce nepomůže.
-Hovor mezitím zapiš k leadu: `phonecall_create(lead=<id>, …)`.
+- `owner` z kroku 0 skillu, nikdy napevno.
+- `leadCategory` (`raynet://codelist/leadCategory`) jsou jména poradců a tipařů (např. 195 Bez tipaře) — stejná logika jako
+  `category` u klienta: kdo dostane podíl na provizi. Jen výslovně jmenovaný tipař, jinak prázdné nebo se zeptej.
+- `priority`: `ELeadPriority` = `MINOR` / `DEFAULT` / `CRITICAL`.
+- Klient z leadu vznikne **převodem v Raynet UI**. `lead_convert` přes MCP jen napojí lead na už existující firmu, osobu nebo OP
+  a nic nezakládá. Hovor mezitím zapiš k leadu: `phonecall_create(lead=<id>, …)`.
 
 ## Soukromé aktivity
 
-Ustálená podoba v datech: `personal: true`, `category` 112 „soukromá aktivita",
-bez `company`, bez `description` i `solution`, krátký neutrální název („Lékař",
-„Louny"). `securityLevel` zůstává 1 „Sdílená" — záznam vidí celý tým, proto se do
-něj nepíše obsah.
+Skill je nezakládá: osobní hovory do Raynetu nepatří (rozhodnutí 1. 10. 2026, `docs/NAVRH-ZAPISY.md`). Kdyby se to změnilo,
+ustálená podoba v datech je `personal: true`, `category` 112 „soukromá aktivita", bez `company`, bez `description`
+i `solution`, krátký neutrální název. `securityLevel` zůstává 1 „Sdílená" — záznam vidí celý tým.
 
 ## Kategorie aktivit
 
@@ -185,6 +193,19 @@ něj nepíše obsah.
 Nastavení `category` přepíše `color` server-side podle barvy kategorie, takže posílat
 `color` vedle `category` nemá smysl.
 
+## Číselníky klienta a prohry
+
+Stav k 2026-10-01 (`raynet://codelist/<entity>`; při chybě id vždy načíst znovu, číselníky se mění).
+
+| Číselník | Položky (id) |
+|---|---|
+| `contactSource` (zdroj kontaktu) | 156 doporučení tipaře · 82 vlastní kontakt · 81 Doporučení (netipař) · 79 web/poptávka · 179 sociální sítě · 196 workshop |
+| `companyCategory` (= **tipař**, určuje dělení provize) | 176 Bez tipaře · 193 Adam Pospíšil · 205 Monopoly Advisory · 180 Úspěšné reality · 113, 175, 197, 190, 153, 155, 157, 186, 208 = jednotliví tipaři (jména v číselníku) |
+| `companyClassification1` (role kontaktu, ne klienta) | 172 VIP · 171 Tipař · 177 Hypoteční specialista · 174 Key account manager · 178 Firemní bankéř · 173 Obchodní partner |
+| `companyClassification2`, `3` | prázdné |
+| `economyActivity` (obor) | jen 202 architekt, nepoužívat |
+| `losingCategory` (kategorie prohry) | 203 nezvedá · 191 Nedostatečná bonita · 124 cena · 125 konkurence · 126 termín · 198 Zamítnuto bankou · 200 klientovi nevyšel záměr koupě, vada nemovitosti · 127 jiná |
+
 ## Povinná pole při zakládání
 
 | Entita | Povinné |
@@ -196,7 +217,38 @@ Nastavení `category` přepíše `color` server-side podle barvy kategorie, tak�
 | `company_create` | `name`, `rating`, `state`, `role` |
 | `person_create` | `lastName` |
 
-`owner` nemá default a neexistuje pro něj lookup nástroj — je to vždy **2**.
+`owner` nemá default a neexistuje pro něj lookup nástroj. Skill ho zjistí za běhu z přihlášeného uživatele
+(`user_info` vrátí `username` = e-mail, `person_list(email=…)` vrátí id; ověřeno 1. 10. 2026: adam.pospisil@egfin.cz → 2).
+Každý kolega má vlastní instanci Herma a zapisuje sám za sebe.
+
+`lead_create` funguje (na rozdíl od fyzické osoby): povinné je jen `topic`, vhodné `firstName`, `lastName`, `leadPerson=true`,
+`email`, `tel1`, `contactSource`. Použij, když volající v CRM není.
+
+## Vlastní pole
+
+MCP **nevrací definice** vlastních polí, klíč (`název_hash`) je vidět jen u záznamu, kde je pole vyplněné. Seznam polí je v UI
+v Nastavení » Vlastní pole, přes REST v `GET /api/v2/customField/config/`. Průzkum instance k 2026-10-01 (69 OP, 50 klientů,
+30 leadů, 80 aktivit):
+
+**Klient (`company`)**, vyplněno u 18 % klientů, hlavně z webového formuláře /analyza-portfolia:
+
+| Klíč | Obsah | Typ |
+|---|---|---|
+| `Pocet_deti_cf874` | počet dětí | celé číslo |
+| `zamestnava_ffa65` | zaměstnavatel | text |
+| `pracovni_p_f7e4d` | pracovní pozice | text |
+| `Najmy_v_DP_bb662` | nájmy v daňovém přiznání | ano/ne |
+| `Soucasny_c_952ff` | současný čistý nájem | **text** (číslo jako řetězec) |
+| `DPFO_posle_46c18`, `DPFO_predp_6db0e` | DPFO za poslední a předposlední rok | soubor (MCP nenahraje) |
+| `Rodne_cisl_ed0da` | rodné číslo | text, **jen z dokumentu, nikdy z hovoru** |
+| `Zadatel_v__a594e`, `Alternativ_b3c97` | význam nejasný | ano/ne, nevyplňovat |
+
+**Obchodní případ.** Skill pole OP **nemění** (Adam, 1. 10. 2026: jen návrh posunu fáze), ale čte je pro kartu OP a bonitu:
+`producent_6ef95` (banka, celé obchodní jméno), `vyse_uveru_ad8b6`, `Ucel_uveru_47dd5`, `Hodnota_za_21c14` (hodnota zajištění),
+`Splatnost_7586b` (měsíce), `konec_fixa_65281`, `urokova_sa_51229`, `LTV_eedee`, `Provize_dc7d2`, `cislo_smlo_60eb1`,
+`Predstaven_47ad0` (datum nabídky, plní ho workflow při fázi „Nabídnuto“), `Datum_podp_02aa4`, `Vyjadreni__d8106` (schválení).
+
+**Lead a aktivity:** vlastní pole ve vzorku nevyplněná. Web všechno píše do `notice`.
 
 ## Vazby mezi entitami
 
@@ -230,7 +282,25 @@ nepošleš, je smazán. Před každou změnou načti `phonecall_get` a stávají
 (`company_get`) nebo string (`company_list`) — počítej s obojím. `null` maže vše,
 prázdný string ne.
 
+**Prázdný string nemaže ani text.** `event_update` / `meeting_update` se `solution=""` pole nevyprázdní, náhled změnu
+vůbec neukáže (ověřeno 12. 10. 2026).
+
+**Událost nezobrazuje Výsledek.** Zápis do `solution` Události je v UI neviditelný. Viz [Typy aktivit](#typy-aktivit).
+
 **`phonecall_update` neumí změnit `owner`** — backend to pole na update ignoruje.
+
+**`status=COMPLETED` při create nastaví `completed` na čas zápisu**, ne na `scheduledTill` (ověřeno 1. 10. 2026, telefonát 37590:
+konec hovoru 18:05, `completed` 18:37). Oprava: hned potom `phonecall_update(completed=<konec hovoru>)` **bez** `status`,
+ověřeno, že projde. Pro kontrolu duplicit proto ber `scheduledTill`, ne `completed`.
+
+**Řešitel úkolu:** `resolverPerson` v `task_create` i `task_update` vrátí úspěch, ale řešitele nezmění. Funkční je přepsat osobu
+u druhého účastníka v `participants` (zadavatel `owner: true, role: FROM`, řešitel druhý záznam). Viz vault `crm-raynet`,
+„Práce přes MCP konektor“.
+
+**Google kalendář je synchronizovaný obousměrně.** **Zrušení (`CANCELLED`) aktivity v Raynetu ji v Googlu smaže**, smazání
+v Googlu ji smaže v Raynetu. „Hotovo“ se do Googlu nepropíše (nápověda A/203015978). Skill schůzky nikdy neruší, jen dokončuje.
+
+**Pozvánky** na schůzky založené přes API/MCP se klientovi neodesílají. Pozvánku posílá jen ruční akce v UI.
 
 **Zápis běží na dva kroky.** První volání vrátí náhled a `confirmToken`, druhé se
 stejnými argumenty plus tokenem provede zápis. Token platí **60 sekund** a nikdy
@@ -255,20 +325,20 @@ záznamu v celé bázi. Jako indikátor typu nepoužitelné.
 **Identifikátory nejsou unikátní:**
 
 - `email` — pokrytí ~97 %, ale sdílí ho majitel se svojí s.r.o., manželé, a v jednom
-  ověřeném případě dva různí lidé (`simkrom@seznam.cz` = Jiří i Jan Šimek).
+  ověřeném případě dva různí lidé (stejné příjmení, jiné křestní jméno).
 - `regNumber` — jen u 29 % fyzických osob, duplicitní (`21697728` na dvou záznamech)
   a obsahuje nesmysly jako `"0"`, `"4"`, `"6"`.
 
 Proto se páruje **e-mail + příjmení**, ne jedním klíčem.
 
 **`name` filtr rozlišuje diakritiku.** Je to substring bez ohledu na velikost písmen,
-ale `Calek` nenajde `Milan Čálek` (ověřeno — vrátil jen firmu `Calek Invest s.r.o.`,
-zapsanou bez diakritiky). Na hledání podle jména z přepisu proto použij
+ale příjmení bez háčku nenajde klienta, který ho má s háčkem (ověřeno na skutečném klientovi: dotaz vrátil jen jeho
+firmu, zapsanou bez diakritiky; ilustračně `Capek` nenajde `Milan Čápek`, jen `Capek Invest s.r.o.`). Na hledání podle jména z přepisu proto použij
 `scripts/match_name.py variants`, který generuje i varianty s háčkem a bez něj.
 
-**Cizí jména bývají zapsaná foneticky.** Klient, kterého uživatel zná jako
-„Bretschneider", je v CRM `Jan Bretšnajdr` (id 124). Přímé hledání originálního
-pravopisu nenajde nic; prefix `Bret` ano.
+**Cizí jména bývají zapsaná foneticky.** Klient, kterého uživatel zná v německém pravopisu (ilustračně `Schneider`),
+je v CRM zapsaný foneticky (`Šnajdr`). Přímé hledání originálního pravopisu nenajde nic a prefix originálu (`Sch`) také ne.
+`scripts/match_name.py variants` proto přidá i český fonetický přepis (`Šnajder` → prefix `Šna`), který zápis najde.
 
 **`fulltext`** matchuje celá slova a prefixy, **ne libovolný substring**. Číselné
 tokeny funguje (test `"2856"` → 2 zásahy). Zásah může přijít z nečekaného pole.
@@ -300,11 +370,16 @@ Tagy se reálně používají: 450 záznamů nese `Broker Trust`.
 ## Co MCP neumí
 
 - ❌ **Založit fyzickou osobu** — `company_create` vytvoří vždy organizaci.
-  U ~94 % klientské báze to znamená, že nový klient je vždy ruční krok v Raynet UI.
-- ❌ **Založit e-mail nebo dopis jako aktivitu.** Feed `activity_list` je vrací
-  (`_entityName: "Email"`), ale `email_*` ani `letter_*` nástroje neexistují
-  a `entityType` připouští jen `task`, `meeting`, `event`, `phonecall`.
+  U ~94 % klientské báze to znamená, že nový klient je ruční krok v Raynet UI (nebo lead přes `lead_create`).
+  REST API to umí (`PUT /company/` s `person=true`, `firstName`, `lastName`), MCP ne.
+- ❌ **Externí ID** (`extIds`, až 10 na záznam, např. `pocket:<recordingId>`) — umí jen REST API (`/{entity}/{id}/extId/`).
+  Byl by to nejspolehlivější klíč proti duplicitám, přes MCP zatím nejde.
+- ❌ **Založit e-mail nebo dopis jako aktivitu.** Číst je jde (od 10/2026): `email_list` a `letter_list` vrací
+  přehled bez těla, `email_get` a `letter_get` detail s tělem. `email_list` u e-mailů přijatých nebo odeslaných přes
+  CRM inbox vrací i `from` a `recipients` (u IMAP importů jsou prázdné) a filtruje podle `completedFrom`/`completedTill`,
+  takže najde i přijaté e-maily, které nemají plánovaný čas. Přílohy nástroje nevracejí.
 - ❌ **Generický `activity_get`** — detail se čte podle subtypu.
+- ❌ **Změnit typ aktivity** (Událost → Schůzka) — jen ručně v UI, převod vytvoří nový záznam s novým id.
 - ❌ **Nahrát binární přílohu** — jen `attachmentLink` (URL) nebo `attachmentFolderId`.
 - ❌ **Smazat cokoli** — žádný `delete` nástroj. Zápis je nevratný.
 - ❌ **Nastavit `businessCase.status` přímo** — jen přes `businessCasePhase`.

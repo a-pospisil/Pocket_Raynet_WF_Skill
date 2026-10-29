@@ -20,7 +20,7 @@ navazuji na náš dnešní hovor. Poprosím Vás o následující podklady:
 - daňové přiznání za poslední 2 roky
 - výpis z účtu, kam chodí nájmy
 
-S pozdravem
+Děkuji a přeji hezký den
 """
 
 

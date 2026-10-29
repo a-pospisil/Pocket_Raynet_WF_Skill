@@ -15,7 +15,7 @@ compatibility: >-
   Vyžaduje MCP servery Hey Pocket (plán Pro) a Raynet CRM, a Python 3 pro skripty
   (jen standardní knihovna).
 metadata:
-  version: "0.4.0"
+  version: "0.4.1"
   hermes:
     tags: [crm, raynet, pocket, hypoteky, email]
 ---

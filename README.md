@@ -168,3 +168,9 @@ polí klienta (mapování „co zaznělo → klíč“ v šabloně karty klienta
 a na výslovný pokyn vyplní i pole OP.
 Podle Adamových rozhodnutí z 12. 10. 2026 skill zakládá OP, když hovor evidentně řeší konkrétní případ, přepočítá hrubou mzdu na
 čistou a souhrnný úkol vede jako checklist `☐`/`☑`, který při dalších bězích odškrtává a posouvá termín úkolu na další otevřený bod.
+
+29. 10. 2026 (verze 0.4.1) byla **pravidla e-mailů sjednocena s vaultem** (`a-pospisil/vault`, stránky `styl-komunikace` a
+`komunikacni-vzory`) podle analýzy 444 Adamových e-mailů z Raynetu a jeho odpovědí na 33 otázek: rozloučení „Děkuji a přeji hezký
+den“ místo „S pozdravem“, podpis vždy celý blok (u konceptu `.eml` ho přidá skript, jinak ho píše agent), tykaný klient „Díky a měj
+se“ + podpis, kolega „Díky, Adam“, vlákno klient + partner „Dobrý den, všem,“ s vykáním a nová sekce „Rozhodnutí Adama“
+v `references/email-style.md` (délka, omluva, termíny hovoru, jazyk, předmět, banky, kolegové, daňové a právní rady).

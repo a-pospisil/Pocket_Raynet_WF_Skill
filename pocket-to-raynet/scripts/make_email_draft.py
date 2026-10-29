@@ -14,7 +14,7 @@ Použití:
 
 Tělo se píše v Markdownu (odstavce, odrážky, **tučně**) a převede se na HTML
 i na čistý text. Podpis se připojí z assets/signature.txt, pokud nedáte --no-signature.
-Oslovení a rozloučení („S pozdravem") patří do těla — liší se podle klienta.
+Oslovení a rozloučení („Děkuji a přeji hezký den", „Díky a měj se") patří do těla — liší se podle klienta.
 """
 
 import argparse

@@ -15,7 +15,7 @@ compatibility: >-
   Vyžaduje MCP servery Hey Pocket (plán Pro) a Raynet CRM, a Python 3 pro skripty
   (jen standardní knihovna).
 metadata:
-  version: "0.4.1"
+  version: "0.4.2"
   hermes:
     tags: [crm, raynet, pocket, hypoteky, email]
 ---
@@ -226,8 +226,8 @@ Do textu patří i interní věci: další postup, rozdělení práce, ladění 
 **Rady k fakturaci nepiš** (jak má fakturace vypadat, komu a kolika odběratelům fakturovat). Fakturaci uveď jen tak, jak ji
 klient sám popsal (Adam, 1. 10. 2026).
 
-**Bonita (u šablony L, a kdykoli se v hovoru mění příjmy, závazky nebo záměr).** Pro **všech 8 bank** (ČS, ČSOB, KB, RB, UCB,
-mBank, Oberbank, MONETA) podle metodiky:
+**Bonita (u šablony L, a kdykoli se v hovoru mění příjmy, závazky nebo záměr).** Pro **6 bank** (ČS, ČSOB, KB, RB, UCB, mBank)
+podle metodiky; **MONETA, Oberbank a Fio vynechat** (Adam, 13. 10. 2026):
 
 - Zdroj pravidel: metodika bank na jednom místě v **Evergreen app** (napojení se připravuje). Do té doby Adamův vault `wiki/metodiky/`.
   U kolegy bez přístupu k metodice skill bonitu nepočítá a napíše „bonita: chybí přístup k metodice“.
@@ -235,8 +235,11 @@ mBank, Oberbank, MONETA) podle metodiky:
   Velké stránky nečti celé: blok „⚡ Rychle“, pak `grep -n "^## "` a jen potřebná sekce.
 - Sazby z `temata/sazby-a-slevy-bank.md` (nejvýš 1 měsíc staré, jinak označit), stres podle metodiky banky.
 - Chybějící vstup → **rozpětí min–max** s jednou větou, co je rozdílem. Nic nedomýšlet.
-- Výstup: plný rozpad u každé banky a „projde u X z 8“ (formát v šablonách). Je to orientační výpočet, ne schválení.
-- **Podnikatelské úvěry (MONETA SBL, úvěr pro s.r.o., Živnohypo) bonitu po 8 bankách nepočítají.** Místo ní parametry produktu
+- Výstup: plný rozpad u každé banky a „projde u X z 6“ (formát v šablonách). Je to orientační výpočet, ne schválení.
+- **Rozpad po bankách se vždy zapisuje do Raynetu, nikdy jen do chatu** (Adam, 14. 10. 2026, potvrzeno 1. 11. 2026): celý blok
+  „Bonita po bankách“ (banka na řádek) jde do **zápisu aktivity**, do **popisu OP** (karta, sekce Bonita) i do **souhrnného úkolu**.
+  Do chatu se dává jen náhled před zápisem.
+- **Podnikatelské úvěry (MONETA SBL, úvěr pro s.r.o., Živnohypo) bonitu po bankách nepočítají.** Místo ní parametry produktu
   (obrat, LTV, DSCR, limit) a co banka započte: např. nájmy z DPFO, celý úvěr spoludlužníka (Adam, 1. 10. 2026).
 
 ### 8. Ukaž náhled a nech potvrdit

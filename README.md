@@ -2,7 +2,7 @@
 
 Claude skill, který zapisuje hovory a schůzky nahrané v **Hey Pocket** do **Raynet CRM**:
 stručný strukturovaný zápis (dokončí naplánovanou aktivitu, jinak založí realizovanou),
-kartu případu v popisu obchodního případu s nájmy a bonitou pro 8 bank, maximum údajů na kartu klienta
+kartu případu v popisu obchodního případu s nájmy a bonitou pro 6 bank (ČS, ČSOB, KB, RB, UCB, mBank), maximum údajů na kartu klienta
 (kontakty, zdroj, tipař, vlastní pole, profil klienta s portfoliem a konci fixací),
 jeden souhrnný úkol s návrhem e-mailu a návrh posunu fáze. Ráno umí připravit dnešní schůzky.
 Běží v Claude Code i v orchestrátoru Hermes (každý poradce vlastní instance).
@@ -174,3 +174,7 @@ Podle Adamových rozhodnutí z 12. 10. 2026 skill zakládá OP, když hovor evid
 den“ místo „S pozdravem“, podpis vždy celý blok (u konceptu `.eml` ho přidá skript, jinak ho píše agent), tykaný klient „Díky a měj
 se“ + podpis, kolega „Díky, Adam“, vlákno klient + partner „Dobrý den, všem,“ s vykáním a nová sekce „Rozhodnutí Adama“
 v `references/email-style.md` (délka, omluva, termíny hovoru, jazyk, předmět, banky, kolegové, daňové a právní rady).
+
+1. 11. 2026 (verze 0.4.2): **rozpad bonity po bankách se vždy zapisuje do Raynetu** (zápis aktivity, popis OP i souhrnný úkol),
+nikdy jen do chatu (Adam, 14. 10. 2026, potvrzeno 1. 11.), a bonita se počítá pro **6 bank** (ČS, ČSOB, KB, RB, UCB, mBank);
+MONETA, Oberbank a Fio se vynechávají (Adam, 13. 10. 2026), stejně jako ve vaultu (`crm-raynet`).

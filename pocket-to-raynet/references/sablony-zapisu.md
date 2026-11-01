@@ -152,11 +152,11 @@ přesune pod nadpis „Původní poznámky“ a nikdy ho nemaže. Před zápisem
 
 ## Bonita po bankách
 
-Počítá se **vždy pro všech 8 bank**: ČS, ČSOB, KB, RB, UCB, mBank, Oberbank, MONETA. Pravidla bere z metodiky
+Počítá se **vždy pro 6 bank**: ČS, ČSOB, KB, RB, UCB, mBank; **MONETA, Oberbank a Fio vynechat** (Adam, 13. 10. 2026). Pravidla bere z metodiky
 (`rychla-reference`, `kalkulacky-bank`, tematické stránky; viz `SKILL.md`, krok „Bonita“). Sazby z `sazby-a-slevy-bank`
 (nejvýš 1 měsíc staré, starší označit `[sazba k <datum>]`), stres podle metodiky banky.
 
-**Výjimka: podnikatelské úvěry** (MONETA SBL, úvěr pro s.r.o., Živnohypo). Bonita po 8 bankách se nepočítá. Místo ní jeden
+**Výjimka: podnikatelské úvěry** (MONETA SBL, úvěr pro s.r.o., Živnohypo). Bonita po bankách se nepočítá. Místo ní jeden
 řádek s parametry produktu a s tím, co banka započte:
 
 ```html
@@ -173,13 +173,15 @@ Předpoklady: 30 let · závazky 31 500 · KK 50 000 · domácnost 1 · stávaj�
 <li><b>RB Profit 2,51 mil. (DSTI)</b> · 108 900 · 16 355 při DSTI 45 % · DTI 7: 3,65 mil. · LTV 70 %: 3,50 mil. · 4,79 % / +2 p. b.</li>
 <li><b>ČS 2,06–3,50 mil. (DTI / LTV)</b> · 90 000–108 900 · … <i>pesim.: nájem z DP = 0 (záporný ř. 206); optim.: nájem ze smluv</i></li>
 </ul>
-<p><b>Nejlépe:</b> KB a ČSOB 3,50 mil. (limit LTV) · <b>požadováno</b> 3,50 mil. → projde u 4 z 8</p>
+<p><b>Nejlépe:</b> KB a ČSOB 3,50 mil. (limit LTV) · <b>požadováno</b> 3,50 mil. → projde u 4 z 6</p>
 ```
 
 - **Chybějící vstup → rozpětí min–max.** Pesimistická a optimistická varianta s jednou větou, co je rozdílem. Nevymýšlet střed.
+- **Kam se zapisuje:** vždy do Raynetu, nikdy jen do chatu (Adam, 14. 10. 2026, potvrzeno 1. 11. 2026): zápis aktivity (šablona L),
+  popis OP (karta, sekce „Bonita k …“) a souhrnný úkol (sekce „Bonita po bankách“ pod checklistem). Ve všech třech stejný plný rozpad.
 - **Plný rozpad u každé banky:** uznaný příjem (z čeho), max. splátka a DSTI, strop DTI, strop LTV, sazba a stres, výsledek a co limituje.
-- **Požadovaná částka:** je-li známá, na konec „projde u X z 8“ a u neprocházejících banky o kolik chybí.
-- Banky, které případ principiálně nevezmou (budoucí nájem u ČSOB, UCB, mBank a MONETA; bytový dům u mBank…), mají místo čísla
+- **Požadovaná částka:** je-li známá, na konec „projde u X z 6“ a u neprocházejících banky o kolik chybí.
+- Banky, které případ principiálně nevezmou (budoucí nájem u ČSOB, UCB a mBank; bytový dům u mBank…), mají místo čísla
   `0 – <důvod>`. Řádek zůstává, ať je vidět proč.
 - **Nikdy jako schválení.** Je to orientační výpočet podle metodiky k datu, ne stanovisko banky.
 
@@ -212,6 +214,8 @@ měsíců). Co dodá klient, patří do zápisu a do návrhu e-mailu, ne do úko
 <li>☐ Eva · bonita v kalkulaci KB a ČSOB · do 2. 10.</li>
 <li>☐ Adam · poslat nabídku 2 bank · do 6. 10.</li>
 </ul>
+<p><b>Bonita po bankách</b> <i>(stejný blok jako v kartě OP, banka na řádek; jen když se bonita v tomto běhu počítala)</i></p>
+<ul>…</ul>
 <p><b>Návrh e-mailu klientovi</b> <i>(odeslat z Raynetu)</i></p>
 <p>Dobrý den, …</p>
 ```
